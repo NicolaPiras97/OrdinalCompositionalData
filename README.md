@@ -1,6 +1,6 @@
 # Ordinal Compositional Data
 
-This is the code we used for the simulation study in the paper "". 
+This is the code we used for the simulation study in the paper "Regression models for ordinal compositional data". 
 The code in this version is available for case stydy reproducibility purposes only. 
 
 ## Usage
