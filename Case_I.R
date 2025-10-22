@@ -91,16 +91,9 @@ for(n in 1:Ni){
     
     x[n,]<-rdirichlet(1,rep(1,Cx))
     
-    rb<-rbinom(1,1,prob=c(0.5,0.5))
-    rb<-1
     for(i in 1:Cx){
       if(which.max(x[n,])==i){
-        if(rb==0){
-          xi<-xi2[Cx+1-i]
-        }
-        if(rb==1){
-          xi<-xi2[i]
-        }
+        xi<-xi2[i]
       }
     }  
     
@@ -458,4 +451,5 @@ apply(weightstot1,2,mean)
 apply(weightstot1,2,sd)
 apply(weightstot2,2,mean)
 apply(weightstot2,2,sd)
+
 
