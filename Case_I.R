@@ -1,4 +1,3 @@
-setwd("C://Users//nicol//Desktop//statistica//Simplex")
 source(file="Functions_simplex.R")
 
 #Scenario 1
@@ -459,3 +458,4 @@ apply(weightstot1,2,mean)
 apply(weightstot1,2,sd)
 apply(weightstot2,2,mean)
 apply(weightstot2,2,sd)
+
