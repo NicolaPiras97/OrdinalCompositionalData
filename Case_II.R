@@ -12,9 +12,9 @@ Cx2=4
 Cy=5
 b1b <- 2
 b1c <- 6
-b2b <- 0.5
-b2c <- 3
-b2d<- 5
+b2b <- 0.5 #0 for Setting 1
+b2c <- 3 #0 for Setting 1
+b2d<- 5 #0 for Setting 1
 x1<-matrix(0,nrow=Ni,ncol=Cx1)
 x2<-matrix(0,nrow=Ni,ncol=Cx2)
 y<-matrix(0,nrow=Ni,ncol=Cy)
@@ -276,5 +276,6 @@ apply(weightstot1,2,mean)
 apply(weightstot1,2,sd)
 apply(weightstot2,2,mean)
 apply(weightstot2,2,sd)
+
 
 
