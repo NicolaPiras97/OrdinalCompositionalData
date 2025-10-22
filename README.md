@@ -5,7 +5,7 @@ The code in this version is available for case stydy reproducibility purposes on
 
 ## Usage
 
-To run the simulation launch the .R file, which recalls the .......... Be sure to have installed the ..........
+To run the simulations launch the .R files for each case (I, II, III, IV), which recalls the Functions_simplex.R file. Be sure to have installed the packages referred to in Functions_simplex.R.
 
 ## Citing us
 
