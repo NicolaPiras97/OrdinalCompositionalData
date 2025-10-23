@@ -41,7 +41,7 @@ Cx=5
 Cy=5
 x<-matrix(0,nrow=Ni,ncol=Cx)
 y<-matrix(0,nrow=Ni,ncol=Cy)
-ridit<-matrix(0,nrow=N,ncol=Cy)
+ridit<-matrix(0,nrow=Ni,ncol=Cy)
 xi2<-c(0.8,0.7,0.5,0.3,0.2)
 
 #Scenario 3
@@ -54,7 +54,7 @@ Cy=3
 xi2<-c(0.9,0.5,0.1)
 x<-matrix(0,nrow=Ni,ncol=Cx)
 y<-matrix(0,nrow=Ni,ncol=Cy)
-ridit<-matrix(0,nrow=N,ncol=Cy)
+ridit<-matrix(0,nrow=Ni,ncol=Cy)
 
 #Scenario 4
 generation<-"Proportional_odds"
@@ -70,7 +70,7 @@ b1d <- 4
 b1e <- 6
 x<-matrix(0,nrow=Ni,ncol=Cx)
 y<-matrix(0,nrow=Ni,ncol=Cy)
-ridit<-matrix(0,nrow=N,ncol=Cy)
+ridit<-matrix(0,nrow=Ni,ncol=Cy)
 
 #Scenario 5
 Cx=3
@@ -83,7 +83,7 @@ b1b <- 2
 b1c <- 6
 x<-matrix(0,nrow=Ni,ncol=Cx)
 y<-matrix(0,nrow=Ni,ncol=Cy)
-ridit<-matrix(0,nrow=N,ncol=Cy)
+ridit<-matrix(0,nrow=Ni,ncol=Cy)
 
 for(n in 1:Ni){
   
@@ -451,3 +451,4 @@ apply(weightstot1,2,mean)
 apply(weightstot1,2,sd)
 apply(weightstot2,2,mean)
 apply(weightstot2,2,sd)
+
