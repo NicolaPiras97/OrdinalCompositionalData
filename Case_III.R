@@ -18,7 +18,7 @@ b2d<- 5 #0 for Setting 1
 x1<-matrix(0,nrow=Ni,ncol=Cx1)
 x2<-matrix(0,nrow=Ni,ncol=Cx2)
 y<-matrix(0,nrow=Ni,ncol=Cy)
-ridit<-matrix(0,nrow=N,ncol=Cy)
+ridit<-matrix(0,nrow=Ni,ncol=Cy)
 
 for(n in 1:Ni){
     
@@ -276,3 +276,4 @@ apply(weightstot1,2,mean)
 apply(weightstot1,2,sd)
 apply(weightstot2,2,mean)
 apply(weightstot2,2,sd)
+
