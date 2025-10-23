@@ -21,15 +21,15 @@ for(i in 1:dim(y)[1]){
 }
 weights<-c(mean(rid[,2]-rid[,1]),mean(rid[,3]-rid[,2]))
 
-ydati<-list()
-xdati<-list()
+ydata<-list()
+xdata<-list()
 for(i in 1:dim(y)[1]){
-  ydati[[i]]<-y[i,]
+  ydata[[i]]<-y[i,]
 }
 for(i in 1:dim(y)[1]){
-  xdati[[i]]<-x[i,]
+  xdata[[i]]<-x[i,]
 }
-sol<-solve_simplex_lp( xdati , ydati , weights )
+sol<-solve_simplex_lp( xdata , ydata , weights )
 mat<-sol$A
 
 #Scenario 2
@@ -184,15 +184,15 @@ for(i in 1:(Cy-1)){
 }
 #weights<-rep(1,Cy-1) #for case A-1
 
-ydati<-list()
-xdati<-list()
+ydata<-list()
+xdata<-list()
 for(i in 1:dim(y)[1]){
-  ydati[[i]]<-y[i,]
+  ydata[[i]]<-y[i,]
 }
 for(i in 1:dim(y)[1]){
-  xdati[[i]]<-x[i,]
+  xdata[[i]]<-x[i,]
 }
-sol<-solve_simplex_lp( xdati , ydati , weights )
+sol<-solve_simplex_lp( xdata , ydata , weights )
 mat<-sol$A
 
 #Simulation
@@ -253,48 +253,48 @@ for(it in 1:iter){
   intr<-intot[1:tr]
   inva<-intot[tr+1:va]
   
-  Plista <- list()
+  Plist <- list()
   for(i in 1:N){
-    Plista[[i]]<-x[i,]
+    Plist[[i]]<-x[i,]
   }
-  Pprimo1<-list()
+  Pprime1<-list()
   for(i in 1:N){
-    Pprimo1[[i]]<-y1[i,]
+    Pprime1[[i]]<-y1[i,]
   }
-  Pprimo2<-list()
+  Pprime2<-list()
   for(i in 1:N){
-    Pprimo2[[i]]<-y2[i,]
+    Pprime2[[i]]<-y2[i,]
   }
   
-  Plistax <- list()
+  Plistx <- list()
   for(i in 1:tr){
-    Plistax[[i]]<-Plista[[intr[i]]]
+    Plistx[[i]]<-Plist[[intr[i]]]
   }
-  Pprimoy1<-list()
+  Pprimey1<-list()
   for(i in 1:tr){
-    Pprimoy1[[i]]<-Pprimo1[[intr[i]]]
+    Pprimey1[[i]]<-Pprime1[[intr[i]]]
   }
-  Pprimoy2<-list()
+  Pprimey2<-list()
   for(i in 1:tr){
-    Pprimoy2[[i]]<-Pprimo2[[intr[i]]]
+    Pprimey2[[i]]<-Pprime2[[intr[i]]]
   }
   
-  resstima <- solve_simplex_lp( Plistax , Pprimoy1 , weights1 )
-  matricecoeff1<-resstima$A
-  resstima <- solve_simplex_lp( Plistax , Pprimoy2 , weights2 )
-  matricecoeff2<-resstima$A
+  resestim <- solve_simplex_lp( Plistx , Pprimey1 , weights1 )
+  matrixcoeff1<-resestim$A
+  resestim <- solve_simplex_lp( Plistx , Pprimey2 , weights2 )
+  matrixcoeff2<-resestim$A
   
   Px<-matrix(0,nrow=N-va,ncol=Cx)
   for(i in 1:(N-va)){
-    Px[i,]<-Plistax[[i]]
+    Px[i,]<-Plistx[[i]]
   }
   Py1<-matrix(0,nrow=N-va,ncol=Cy)
   for(i in 1:(N-va)){
-    Py1[i,]<-Pprimoy1[[i]]
+    Py1[i,]<-Pprimey1[[i]]
   }
   Py2<-matrix(0,nrow=N-va,ncol=Cy)
   for(i in 1:(N-va)){
-    Py2[i,]<-Pprimoy2[[i]]
+    Py2[i,]<-Pprimey2[[i]]
   }
   
   Ex<-rep(0,tr)
@@ -310,21 +310,21 @@ for(it in 1:iter){
     }
   }
   
-  ymedio<-vector()
+  ymean<-vector()
   for(j in 1:Cy){
-    ymedio[j]=0
+    ymean[j]=0
   }
   for(j in 1:Cy){
     for(i in 1:tr){
-      ymedio[j]<-ymedio[j]+Pprimoy1[[i]][j]
+      ymean[j]<-ymean[j]+Pprimey1[[i]][j]
     }
   }
-  ymedio=ymedio/tr
+  ymean=ymean/tr
   den<-0
   for(i in 1:tr){
-    den=den+wd(c(weights1,1),ymedio,Pprimoy1[[i]])
+    den=den+wd(c(weights1,1),ymean,Pprimey1[[i]])
   }
-  R2<-1-resstima$loss/den
+  R2<-1-resestim$loss/den
   result[it,2]<-R2
   
   A1<-(codalm(Py1,Px))
@@ -334,25 +334,25 @@ for(it in 1:iter){
   for(i in 1:tr){
     for(k in 1:dim(A2)[2]){
       for(j in 1:dim(A2)[1]){
-        b[i,k]=b[i,k]+A2[j,k]*Plistax[[i]][j]
+        b[i,k]=b[i,k]+A2[j,k]*Plistx[[i]][j]
       }
     }
-    lo=lo+kld(Pprimoy2[[i]],b[i,])
+    lo=lo+kld(Pprimey2[[i]],b[i,])
   }
   
-  ymedio<-vector()
+  ymean<-vector()
   for(j in 1:Cy){
-    ymedio[j]=0
+    ymean[j]=0
   }
   for(j in 1:Cy){
     for(i in 1:tr){
-      ymedio[j]<-ymedio[j]+Pprimoy2[[i]][j]
+      ymean[j]<-ymean[j]+Pprimey2[[i]][j]
     }
   }
-  ymedio=ymedio/tr
+  ymean=ymean/tr
   den<-0
   for(i in 1:tr){
-    den<-den+kld(Pprimoy2[[i]],ymedio)
+    den<-den+kld(Pprimey2[[i]],ymean)
   }
   
   R2<-1-lo/den
@@ -360,38 +360,38 @@ for(it in 1:iter){
   
   result[it,1]<-cov(Ex,Ey)/(sd(Ex)*sd(Ey))*((N-va-1)/(N-va))
   
-  ystime1<-matrix(0,nrow=va,ncol=Cy)
+  yestim1<-matrix(0,nrow=va,ncol=Cy)
   for(i in 1:va){
-    ystime1[i,]<-matricecoeff1%*%as.matrix(Plista[[inva[i]]])
+    yestim1[i,]<-matrixcoeff1%*%as.matrix(Plist[[inva[i]]])
   }
   yerr1<-rep(0,va)
   for(i in 1:va){
-    yerr1[i]<-wd(c(weights1,1),ystime1[i,],Pprimo1[[inva[i]]])
+    yerr1[i]<-wd(c(weights1,1),yestim1[i,],Pprime1[[inva[i]]])
   }
-  ystime2<-matrix(0,nrow=va,ncol=Cy)
+  yestim2<-matrix(0,nrow=va,ncol=Cy)
   for(i in 1:va){
-    ystime2[i,]<-matricecoeff2%*%as.matrix(Plista[[inva[i]]])
+    yestim2[i,]<-matrixcoeff2%*%as.matrix(Plist[[inva[i]]])
   }
   yerr2<-rep(0,va)
   for(i in 1:va){
-    yerr2[i]<-wd(c(weights2,1),ystime2[i,],Pprimo2[[inva[i]]])
+    yerr2[i]<-wd(c(weights2,1),yestim2[i,],Pprime2[[inva[i]]])
   }
   
-  ystime3<-matrix(0,nrow=tr,ncol=Cy)
+  yestim3<-matrix(0,nrow=tr,ncol=Cy)
   for(i in 1:tr){
-    ystime3[i,]<-matricecoeff1%*%as.matrix(Plista[[intr[i]]])
+    yestim3[i,]<-matrixcoeff1%*%as.matrix(Plist[[intr[i]]])
   }
   yerr3<-rep(0,tr)
   for(i in 1:tr){
-    yerr3[i]<-wd(c(weights1,1),ystime3[i,],Pprimo1[[intr[i]]])
+    yerr3[i]<-wd(c(weights1,1),yestim3[i,],Pprime1[[intr[i]]])
   }
-  ystime4<-matrix(0,nrow=tr,ncol=Cy)
+  yestim4<-matrix(0,nrow=tr,ncol=Cy)
   for(i in 1:tr){
-    ystime4[i,]<-matricecoeff2%*%as.matrix(Plista[[intr[i]]])
+    yestim4[i,]<-matrixcoeff2%*%as.matrix(Plist[[intr[i]]])
   }
   yerr4<-rep(0,tr)
   for(i in 1:tr){
-    yerr4[i]<-wd(c(weights2,1),ystime4[i,],Pprimo2[[intr[i]]])
+    yerr4[i]<-wd(c(weights2,1),yestim4[i,],Pprime2[[intr[i]]])
   }
   
   result[it,4]<-sum(yerr1)/va
@@ -400,38 +400,38 @@ for(it in 1:iter){
   result[it,7]<-sum(yerr4)/tr
   
   
-  ystime5<-matrix(0,nrow=va,ncol=Cy)
+  yestim5<-matrix(0,nrow=va,ncol=Cy)
   for(i in 1:va){
-    ystime5[i,]<-t(A1)%*%as.matrix(Plista[[inva[i]]])
+    yestim5[i,]<-t(A1)%*%as.matrix(Plist[[inva[i]]])
   }
   yerr5<-rep(0,va)
   for(i in 1:va){
-    yerr5[i]<-kld(Pprimo1[[inva[i]]],ystime5[i,])
+    yerr5[i]<-kld(Pprime1[[inva[i]]],yestim5[i,])
   }
-  ystime6<-matrix(0,nrow=va,ncol=Cy)
+  yestim6<-matrix(0,nrow=va,ncol=Cy)
   for(i in 1:va){
-    ystime6[i,]<-t(A2)%*%as.matrix(Plista[[inva[i]]])
+    yestim6[i,]<-t(A2)%*%as.matrix(Plist[[inva[i]]])
   }
   yerr6<-rep(0,va)
   for(i in 1:va){
-    yerr6[i]<-kld(Pprimo2[[inva[i]]],ystime6[i,])
+    yerr6[i]<-kld(Pprime2[[inva[i]]],yestim6[i,])
   }
   
-  ystime7<-matrix(0,nrow=tr,ncol=Cy)
+  yestim7<-matrix(0,nrow=tr,ncol=Cy)
   for(i in 1:tr){
-    ystime7[i,]<-t(A1)%*%as.matrix(Plista[[intr[i]]])
+    yestim7[i,]<-t(A1)%*%as.matrix(Plist[[intr[i]]])
   }
   yerr7<-rep(0,tr)
   for(i in 1:tr){
-    yerr7[i]<-kld(Pprimo1[[intr[i]]],ystime7[i,])
+    yerr7[i]<-kld(Pprime1[[intr[i]]],yestim7[i,])
   }
-  ystime8<-matrix(0,nrow=tr,ncol=Cy)
+  yestim8<-matrix(0,nrow=tr,ncol=Cy)
   for(i in 1:tr){
-    ystime8[i,]<-t(A2)%*%as.matrix(Plista[[intr[i]]])
+    yestim8[i,]<-t(A2)%*%as.matrix(Plist[[intr[i]]])
   }
   yerr8<-rep(0,tr)
   for(i in 1:tr){
-    yerr8[i]<-kld(Pprimo2[[intr[i]]],ystime8[i,])
+    yerr8[i]<-kld(Pprime2[[intr[i]]],yestim8[i,])
   }
   
   result[it,8]<-sum(yerr5)/va
@@ -451,5 +451,3 @@ apply(weightstot1,2,mean)
 apply(weightstot1,2,sd)
 apply(weightstot2,2,mean)
 apply(weightstot2,2,sd)
-
-
