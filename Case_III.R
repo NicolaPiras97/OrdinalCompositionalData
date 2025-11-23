@@ -1,8 +1,8 @@
 source(file="Functions_simplex.R")
 
+#setting 1
 m<-100
 Ni<-50
-
 b01 <- 1 
 b02 <- 0.05
 b03 <- -0.05
@@ -12,13 +12,31 @@ Cx2=4
 Cy=5
 b1b <- 2
 b1c <- 6
-b2b <- 0.5 #0 for Setting 1
-b2c <- 3 #0 for Setting 1
-b2d<- 5 #0 for Setting 1
+b2b <- 0
+b2c <- 0
+b2d<- 0
 x1<-matrix(0,nrow=Ni,ncol=Cx1)
 x2<-matrix(0,nrow=Ni,ncol=Cx2)
 y<-matrix(0,nrow=Ni,ncol=Cy)
-ridit<-matrix(0,nrow=Ni,ncol=Cy)
+
+#setting 2
+m<-100
+Ni<-50
+b01 <- 1 
+b02 <- 0.05
+b03 <- -0.05
+b04 <- -1
+Cx1=3
+Cx2=4
+Cy=5
+b1b <- 2
+b1c <- 6
+b2b <- 0.5
+b2c <- 3
+b2d<- 5
+x1<-matrix(0,nrow=Ni,ncol=Cx1)
+x2<-matrix(0,nrow=Ni,ncol=Cx2)
+y<-matrix(0,nrow=Ni,ncol=Cy)
 
 for(n in 1:Ni){
     
@@ -51,19 +69,13 @@ for(n in 1:Ni){
       y[n,]<-table(factor(y1,levels=seq(1:Cy)))/m
 }
 
-rid<-matrix(0,nrow=dim(y)[1],ncol=dim(y)[2])
+ycdf<-matrix(0,nrow=dim(y)[1],ncol=dim(y)[2])
 for(i in 1:dim(y)[1]){
-  rid[i,1]<-0.5*y[i,1]
-  for(c in 2:dim(y)[2]){
-    rid[i,c]<-0.5*y[i,c]
-    for(j in 1:(c-1)){
-      rid[i,c]<-rid[i,c]+y[i,c-j]
-    }
-  }
+  ycdf[i,]<-cumsum(y[i,])
 }
 weights<-c()
 for(i in 1:(Cy-1)){
-  weights[i]<-mean(rid[,i+1]-rid[,i])
+  weights[i]<-median(ycdf[,i+1])-median(ycdf[,i])
 }
 
 ydata<-list()
@@ -78,7 +90,7 @@ for(i in 1:dim(y)[1]){
 for(i in 1:dim(y)[1]){
   x2data[[i]]<-x2[i,]
 }
-Z_data <-lapply(1:Ni, function(i) as.vector(x2data[[i]] %o%x1data[[i]] ))
+Z_data <-lapply(1:Ni, function(i) ordprod(x1data[[i]],x2data[[i]] ))
 sol<-solve_simplex_lp( Z_data , ydata , weights )
 mat<-sol$A
 
@@ -92,10 +104,8 @@ x1<-matrix(0,nrow=N,ncol=Cx1)
 x2<-matrix(0,nrow=N,ncol=Cx2)
 y1<-matrix(0,nrow=N,ncol=Cy)
 y2<-matrix(0,nrow=N,ncol=Cy)
-ridit1<-matrix(0,nrow=N,ncol=Cy)
-ridit2<-matrix(0,nrow=N,ncol=Cy)
-result<-matrix(0,nrow=iter,ncol=7)
-colnames(result)<-c("R2adj","Error validation-set","Error training-set","R2 1 var","Error validation-set 1var","Error training-set 1 var","R2ds")
+result<-matrix(0,nrow=iter,ncol=6)
+colnames(result)<-c("R2W_X1X2","OPI_X1X2","Error validation-set_X1X2","R2W_X1","OPI_X1","Error validation-set_X1")
 weightstot1<-matrix(0,nrow=iter,ncol=Cy-1)
 weightstot2<-matrix(0,nrow=iter,ncol=Cy-1)
 
@@ -105,44 +115,54 @@ for(it in 1:iter){
     
     x1[n,]<-rdirichlet(1,rep(1,Cx1))
     x2[n,]<-rdirichlet(1,rep(1,Cx2))
-    y1[n,]<-mat%*%(lapply(n, function(i) as.vector(x2[n,] %o%x1[n,] )))[[1]]
+    y1[n,]<-mat%*%ordprod(x1[n,],x2[n,])
     y1[n,]<-rdirichlet(1,10*y1[n,])
-    
-    ridit1[n,1]<-0.5*y1[n,1]
-    for(c in 2:Cy){
-      ridit1[n,c]<-0.5*y1[n,c]
-      for(i in 1:(c-1)){
-        ridit1[n,c]<-ridit1[n,c]+y1[n,c-i]
-      }
-    }
     
     y2[n,]<-mat2%*%x1[n,]
     y2[n,]<-rdirichlet(1,10*y2[n,])
     
-    ridit2[n,1]<-0.5*y2[n,1]
-    for(c in 2:Cy){
-      ridit2[n,c]<-0.5*y2[n,c]
-      for(i in 1:(c-1)){
-        ridit2[n,c]<-ridit2[n,c]+y2[n,c-i]
-      }
-    }
-    
   }
   
-  weights1<-c()
-  for(i in 1:(Cy-1)){
-    weights1[i]<-mean(ridit1[,i+1]-ridit1[,i])
+  ycdf<-matrix(0,nrow=dim(y1)[1],ncol=dim(y1)[2])
+  for(i in 1:dim(y1)[1]){
+    ycdf[i,]<-cumsum(y1[i,])
   }
-  weights2<-c()
+  weightsa<-c()
   for(i in 1:(Cy-1)){
-    weights2[i]<-mean(ridit2[,i+1]-ridit2[,i])
+    weightsa[i]<-median(ycdf[,i+1])-median(ycdf[,i])
   }
+  ycdf<-matrix(0,nrow=dim(y2)[1],ncol=dim(y2)[2])
+  for(i in 1:dim(y2)[1]){
+    ycdf[i,]<-cumsum(y2[i,])
+  }
+  weightsb<-c()
+  for(i in 1:(Cy-1)){
+    weightsb[i]<-median(ycdf[,i+1])-median(ycdf[,i])
+  }
+  
   
   tr<-trunc(0.7*N)
   va<-N-tr
   intot<-sample(1:N,N,replace=F)
   intr<-intot[1:tr]
   inva<-intot[tr+1:va]
+  
+  ycdf<-matrix(0,nrow=tr,ncol=dim(y1)[2])
+  for(i in 1:tr){
+    ycdf[i,]<-cumsum(y1[intr[i],])
+  }
+  weights1<-c()
+  for(i in 1:(Cy-1)){
+    weights1[i]<-median(ycdf[,i+1])-median(ycdf[,i])
+  }
+  ycdf<-matrix(0,nrow=tr,ncol=dim(y2)[2])
+  for(i in 1:tr){
+    ycdf[i,]<-cumsum(y2[intr[i],])
+  }
+  weights2<-c()
+  for(i in 1:(Cy-1)){
+    weights2[i]<-median(ycdf[,i+1])-median(ycdf[,i])
+  }
   
   Plist1 <- list()
   for(i in 1:N){
@@ -171,48 +191,82 @@ for(it in 1:iter){
     Pprimey1[[i]]<-Pprime1[[intr[i]]]
   }
   
-  Z_data <-lapply(1:tr, function(i) as.vector(Plistx2[[i]] %o%Plistx1[[i]] ))
+  Z_data <-lapply(1:tr, function(i) ordprod(Plistx1[[i]],Plistx2[[i]] ))
   resestim <- solve_simplex_lp( Z_data , Pprimey1 , weights1 )
   matrixcoeff1<-resestim$A
   
-  ymean<-vector()
+  
+  ymedian<-vector()
   for(j in 1:Cy){
-    ymean[j]=0
+    ymedian[j]=0
   }
-  for(j in 1:Cy){
-    for(i in 1:tr){
-      ymean[j]<-ymean[j]+Pprimey1[[i]][j]
+
+  distot<-rep(0,N)
+  for(i in 1:N){
+    for(j in 1:N){
+      if(i!=j){
+        if(porwd(c(weightsa,1),Pprime1[[i]],Pprime1[[j]])==2){
+          distot[i]=distot[i]+1
+        }
+      }
     }
   }
-  ymean=ymean/tr
-  den<-0
-  for(i in 1:tr){
-    den=den+wd(c(weights1,1),ymean,Pprimey1[[i]])
+  i=1
+  ordtot<-vector()
+  for(j in 1:N){
+    if(length(which(distot==sort(distot,decreasing = F)[i]))==1){
+      ordtot[i]<-which(distot==sort(distot,decreasing = F)[i])
+    }
+    if(length(which(distot==sort(distot,decreasing = F)[i]))>1){
+      ordtot[i:(i+length(which(distot==sort(distot,decreasing = F)[i]))-1)]<-which(distot==sort(distot,decreasing = F)[i])
+    }
+    i=i+length(which(distot==sort(distot,decreasing = F)[i]))
+    if(length(ordtot==N)){
+      stop
+    }
   }
-  R2<-1-((tr-1)/(tr-2-1))*(resestim$loss/den)
-  R2ds<-1-(((tr+1)/(tr))*((tr-2)/(tr-2-2))*((tr-1)/(tr-2-1)))*(resestim$loss/den) #ds
-  result[it,1]<-R2
-  result[it,7]<-R2ds
-  
+  if(N%%2==1){
+    ymedian<-Pprime1[[ordtot[round(N/2)]]]
+  }
+  if(N%%2==0){
+    ymedian<-apply(cbind(Pprime1[[ordtot[N/2]]],Pprime1[[ordtot[N/2+1]]]),1,mean)
+  }
+
+  denw<-0
+  for(i in 1:N){
+    denw=denw+wd(c(weightsa,1),ymedian,Pprime1[[i]])
+  }
+
+  SSRw<-0
+  for(i in 1:N){
+    SSRw=SSRw+wd(c(weightsa,1),ymedian,matrixcoeff1%*%ordprod(Plist1[[i]],Plist2[[i]]))
+    }
+  R2W<-SSRw/denw
+
+  indporwd=0
+  for(i in 1:(N-1)){
+    for(j in (1+i):N){
+      if(porwd(c(weightsa,1),Pprime1[[i]],Pprime1[[j]])==porwd(c(weightsa,1),matrixcoeff1%*%ordprod(Plist1[[i]],Plist2[[i]]),matrixcoeff1%*%ordprod(Plist1[[j]],Plist2[[j]]))){
+          indporwd=indporwd+1
+      }
+    }
+  }
+  PORwd=indporwd/choose(N,2)
+
+  result[it,1]<-R2W*((N-2*(Cy-1))/N)
+  result[it,2]<-PORwd*((N-2*(Cy-1))/N)
+
   yestim1<-matrix(0,nrow=va,ncol=Cy)
   for(i in 1:va){
-    yestim1[i,]<-matrixcoeff1%*%(lapply(va, function(i) as.vector(Plist2[[inva[i]]] %o%Plist1[[inva[i]]] )))[[1]]
+    yestim1[i,]<-matrixcoeff1%*%ordprod(Plist1[[inva[i]]],Plist2[[inva[i]]] )
   }
   yerr1<-rep(0,va)
   for(i in 1:va){
     yerr1[i]<-wd(c(weights1,1),yestim1[i,],Pprime1[[inva[i]]])
   }
-  yestim2<-matrix(0,nrow=tr,ncol=Cy)
-  for(i in 1:tr){
-    yestim2[i,]<-matrixcoeff1%*%(lapply(tr, function(i) as.vector(Plist2[[intr[i]]] %o%Plist1[[intr[i]]] )))[[1]]
-  }
-  yerr2<-rep(0,tr)
-  for(i in 1:tr){
-    yerr2[i]<-wd(c(weights1,1),yestim2[i,],Pprime1[[intr[i]]])
-  }
   
-  result[it,2]<-sum(yerr1)/va
-  result[it,3]<-sum(yerr2)/tr
+  result[it,3]<-sum(yerr1)/va
+  
   
   weightstot1[it,]<-weights1
   
@@ -229,23 +283,65 @@ for(it in 1:iter){
   resestim2 <- solve_simplex_lp( Plistx1 , Pprimey2 , weights2 )
   matrixcoeff2<-resestim2$A
   
-  ymean<-vector()
+  ymedian<-vector()
   for(j in 1:Cy){
-    ymean[j]=0
+    ymedian[j]=0
   }
-  for(j in 1:Cy){
-    for(i in 1:tr){
-      ymean[j]<-ymean[j]+Pprimey2[[i]][j]
+
+  distot<-rep(0,N)
+  for(i in 1:N){
+    for(j in 1:N){
+      if(i!=j){
+        if(porwd(c(weightsb,1),y2[i,],y2[j,])==2){
+          distot[i]=distot[i]+1
+        }
+      }
     }
   }
-  ymean=ymean/tr
-  den<-0
-  for(i in 1:tr){
-    den=den+wd(c(weights2,1),ymean,Pprimey2[[i]])
+  i=1
+  ordtot<-vector()
+  for(j in 1:N){
+    if(length(which(distot==sort(distot,decreasing = F)[i]))==1){
+      ordtot[i]<-which(distot==sort(distot,decreasing = F)[i])
+    }
+    if(length(which(distot==sort(distot,decreasing = F)[i]))>1){
+      ordtot[i:(i+length(which(distot==sort(distot,decreasing = F)[i]))-1)]<-which(distot==sort(distot,decreasing = F)[i])
+    }
+    i=i+length(which(distot==sort(distot,decreasing = F)[i]))
+    if(length(ordtot==N)){
+      stop
+    }
   }
-  R2<-1-resestim2$loss/den
-  result[it,4]<-R2
-  
+  if(N%%2==1){
+    ymedian<-y2[ordtot[round(N/2)],]
+  }
+  if(N%%2==0){
+    ymedian<-apply(cbind(y2[ordtot[N/2],],y2[ordtot[N/2+1],]),1,mean)
+  }
+  denw<-0
+  for(i in 1:N){
+    denw=denw+wd(c(weightsb,1),ymedian,Pprime2[[i]])
+  }
+
+  SSRw<-0
+  for(i in 1:N){
+    SSRw=SSRw+wd(c(weightsb,1),ymedian,matrixcoeff2%*%Plist1[[i]])
+  }
+  R2W<-SSRw/denw
+
+  indporwd=0
+  for(i in 1:(N-1)){
+    for(j in (1+i):N){
+      if(porwd(c(weightsb,1),y2[i,],y2[j,])==porwd(c(weightsb,1),matrixcoeff2%*%Plist1[[i]],matrixcoeff2%*%Plist1[[j]])){
+        indporwd=indporwd+1
+      }
+    }
+  }
+  PORwd=indporwd/choose(N,2)
+
+  result[it,4]<-R2W*((N-(Cy-1))/N)
+  result[it,5]<-PORwd*((N-(Cy-1))/N)
+
   yestim3<-matrix(0,nrow=va,ncol=Cy)
   for(i in 1:va){
     yestim3[i,]<-matrixcoeff2%*%as.matrix(Plist1[[inva[i]]])
@@ -254,17 +350,8 @@ for(it in 1:iter){
   for(i in 1:va){
     yerr3[i]<-wd(c(weights2,1),yestim3[i,],Pprime2[[inva[i]]])
   }
-  yestim4<-matrix(0,nrow=tr,ncol=Cy)
-  for(i in 1:tr){
-    yestim4[i,]<-matrixcoeff2%*%as.matrix(Plist1[[intr[i]]])
-  }
-  yerr4<-rep(0,tr)
-  for(i in 1:tr){
-    yerr4[i]<-wd(c(weights2,1),yestim4[i,],Pprime2[[intr[i]]])
-  }
   
-  result[it,5]<-sum(yerr3)/va
-  result[it,6]<-sum(yerr4)/tr
+  result[it,6]<-sum(yerr3)/va
   
   weightstot2[it,]<-weights2
   
