@@ -78,6 +78,9 @@ kld<-function(P,Q){
     if(P[i]==0){
       P[i]=0.0001
     }
+    if(Q[i]==0){
+      Q[i]=0.0001
+    }
     dist=dist+P[i]*(log(Q[i])-log(P[i]))
   }
   dist = -dist
@@ -86,3 +89,42 @@ kld<-function(P,Q){
 
 ###########################################################
 inv_logit <- function(logit) exp(logit) / (1 + exp(logit))
+
+porwd<-function(weights,P,Q){
+  n<-length(P)
+  m<-length(Q)
+  if (n!=m){
+    stop("P and Q must have the same length!")
+  }
+  #1 P<Q; 2 P>Q; 3 P=Q
+  if(wd(weights,P,c(1,rep(0,n-1)))>wd(weights,Q,c(1,rep(0,n-1)))){
+    return(1)
+  }
+  if(wd(weights,P,c(1,rep(0,n-1)))<wd(weights,Q,c(1,rep(0,n-1)))){
+    return(2)
+  }
+  if(wd(weights,P,c(1,rep(0,n-1)))==wd(weights,Q,c(1,rep(0,n-1)))){
+    return(3)
+  }
+}
+
+####################################à
+
+ordprod<-function(P,Q){
+  n<-length(P)
+  m<-length(Q)
+  t<-min(n,m)
+  Qe<-c(rep(NA,t),Q,rep(NA,t))
+  PQ<-vector()
+  for(it in 1:t){
+    for(i in 1:n){
+      PQ<-c(PQ,P[i]*Qe[i+t-it])
+      if(it==1){
+        PQ<-c(PQ,P[i]*Qe[i+t])
+      }
+      PQ<-c(PQ,P[i]*Qe[i+t+it])
+    }
+  }
+  PQ<-as.vector(na.omit(PQ))
+  return(PQ)
+}
