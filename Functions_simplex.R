@@ -1,8 +1,16 @@
-library ( lpSolveAPI )
-library ( gtools )
-library( codalm )
-library( CUB )
-library( compositions )
+if(!require(lpSolveAPI)) install.packages("lpSolveAPI")
+if(!require(ggplot2)) install.packages("ggplot2")
+if(!require(codalm)) install.packages("codalm") 
+if(!require(gtools)) install.packages("gtools") 
+if(!require(CUB)) install.packages("CUB") 
+if(!require(compositions)) install.packages("compositions") 
+
+library(lpSolveAPI)
+library(gtools)
+library(codalm)
+library(CUB)
+library(compositions)
+library(ggplot2)
 
 solve_simplex_lp <- function ( P_list , P_prime_list , a_weights ) {
   N <- length ( P_list )
@@ -87,6 +95,19 @@ kld<-function(P,Q){
   return(dist)
 }
 
+# --- Global Wasserstein distance between Matrixes ---
+matrix_wasserstein_dist <- function(A, B, weights) {
+  m <- nrow(A); n <- ncol(A)
+  total_dist <- 0
+  for(j in 1:n) {
+    col_A <- A[, j]; col_B <- B[, j]
+    cdf_A <- cumsum(col_A); cdf_B <- cumsum(col_B)
+    diffs <- abs(cdf_A[1:(m-1)] - cdf_B[1:(m-1)])
+    total_dist <- total_dist + sum(diffs * weights)
+  }
+  return(total_dist)
+}
+
 ###########################################################
 inv_logit <- function(logit) exp(logit) / (1 + exp(logit))
 
@@ -127,4 +148,24 @@ ordprod<-function(P,Q){
   }
   PQ<-as.vector(na.omit(PQ))
   return(PQ)
+}
+
+#############plot functions################
+# Ternary transformation (for plot) ---
+# (p1, p2, p3) -> (x, y) in the triangol
+ternary_to_xy <- function(p_mat) {
+  p2 <- p_mat[,2]
+  p3 <- p_mat[,3]
+  data.frame(
+    x = 0.5 * p2 + 1.0 * p3,
+    y = (sqrt(3) / 2) * p2
+  )
+}
+
+# 
+get_cloud_points <- function(matrix_list, col_idx) {
+  mat_col <- do.call(rbind, lapply(matrix_list, function(M) M[, col_idx]))
+  df_xy <- ternary_to_xy(mat_col)
+  df_xy$Column <- paste0("C", col_idx) 
+  return(df_xy)
 }
