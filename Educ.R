@@ -14,9 +14,11 @@ ycdf <- matrix(0, nrow=N, ncol=Cy)
 for(i in 1:N){ ycdf[i,] <- cumsum(ydata[[i]]) }
 weights_orig <- c(median(ycdf[,2])-median(ycdf[,1]), median(ycdf[,3])-median(ycdf[,2]))
 
-cat("Original estimate A_hat\n")
 sol_orig <- solve_simplex_lp(xdata, ydata, weights_orig)
 A_hat <- sol_orig$A
+cat("Original estimate A_hat\n")
+print(round(A_hat,4))
+
 AC<-(codalm(y,x))
 
 # ==============================================================================
