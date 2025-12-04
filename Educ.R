@@ -99,10 +99,10 @@ p_clean <- ggplot() +
 
 print(p_clean)
 
-A_Freshet_W <- matrix(0, nrow=Cx, ncol=Cy)
+A_Freshet_W <- matrix(0, nrow=Cy, ncol=Cx)
 dimnames(A_Freshet_W) <- dimnames(A_hat)
 
-for(j in 1:Cy) {
+for(j in 1:Cx) {
   cols_j_list <- lapply(valid_boots, function(M) M[, j])
   mat_cols_j  <- do.call(cbind, cols_j_list) 
   A_Freshet_W[, j] <- rowMeans(mat_cols_j)
