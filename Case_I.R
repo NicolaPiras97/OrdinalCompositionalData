@@ -178,7 +178,7 @@ sol<-solve_simplex_lp( xdati , ydati , weights )
 mat<-sol$A
 
 #Simulation
-iter=100
+iter=1000
 N=50 #chainge for different sample sizes
 x<-matrix(0,nrow=N,ncol=Cx)
 y1<-matrix(0,nrow=N,ncol=Cy)
@@ -428,3 +428,4 @@ apply(weightstot1,2,mean)
 apply(weightstot1,2,sd)
 apply(weightstot2,2,mean)
 apply(weightstot2,2,sd)
+
