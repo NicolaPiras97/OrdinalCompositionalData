@@ -130,24 +130,29 @@ porwd<-function(weights,P,Q){
 }
 
 ####################################à
-
-ordprod<-function(P,Q){
-  n<-length(P)
-  m<-length(Q)
-  t<-min(n,m)
-  Qe<-c(rep(NA,t),Q,rep(NA,t))
-  PQ<-vector()
-  for(it in 1:t){
-    for(i in 1:n){
-      PQ<-c(PQ,P[i]*Qe[i+t-it])
-      if(it==1){
-        PQ<-c(PQ,P[i]*Qe[i+t])
-      }
-      PQ<-c(PQ,P[i]*Qe[i+t+it])
-    }
-  }
-  PQ<-as.vector(na.omit(PQ))
-  return(PQ)
+tensor_product_ordered <- function(...) {
+  comps <- list(...)
+  lengths <- sapply(comps, length)
+  
+  # all combinations of indexes
+  index_grid <- do.call(expand.grid, lapply(lengths, function(n) 1:n))
+  
+  # product 
+  values <- apply(index_grid, 1, function(idx) {
+    prod(mapply(`[`, comps, idx))
+  })
+  
+  index_sum <- rowSums(index_grid)
+  
+  # first order: sum of indexes
+  # second order: natural order
+  ord <- do.call(order, c(list(index_sum), as.data.frame(index_grid)))
+  
+  list(
+    #indices    = index_grid[ord, , drop = FALSE],
+    #index_sum  = index_sum[ord],
+    product    = values[ord]
+  )
 }
 
 #############plot functions################
@@ -169,3 +174,4 @@ get_cloud_points <- function(matrix_list, col_idx) {
   df_xy$Column <- paste0("C", col_idx) 
   return(df_xy)
 }
+
