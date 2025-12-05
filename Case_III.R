@@ -90,7 +90,7 @@ for(i in 1:dim(y)[1]){
 for(i in 1:dim(y)[1]){
   x2data[[i]]<-x2[i,]
 }
-Z_data <-lapply(1:Ni, function(i) ordprod(x1data[[i]],x2data[[i]] ))
+Z_data <-lapply(1:Ni, function(i) tensor_product_ordered(x1data[[i]],x2data[[i]])$product)
 sol<-solve_simplex_lp( Z_data , ydata , weights )
 mat<-sol$A
 
@@ -191,10 +191,9 @@ for(it in 1:iter){
     Pprimey1[[i]]<-Pprime1[[intr[i]]]
   }
   
-  Z_data <-lapply(1:tr, function(i) ordprod(Plistx1[[i]],Plistx2[[i]] ))
+  Z_data <-lapply(1:tr, function(i) tensor_product_ordered(Plistx1[[i]],Plistx2[[i]])$product)
   resestim <- solve_simplex_lp( Z_data , Pprimey1 , weights1 )
   matrixcoeff1<-resestim$A
-  
   
   ymedian<-vector()
   for(j in 1:Cy){
@@ -239,14 +238,14 @@ for(it in 1:iter){
 
   SSRw<-0
   for(i in 1:N){
-    SSRw=SSRw+wd(c(weightsa,1),ymedian,matrixcoeff1%*%ordprod(Plist1[[i]],Plist2[[i]]))
+    SSRw=SSRw+wd(c(weightsa,1),ymedian,matrixcoeff1%*%tensor_product_ordered(Plist1[[i]],Plist2[[i]])$product)
     }
   R2W<-SSRw/denw
 
   indporwd=0
   for(i in 1:(N-1)){
     for(j in (1+i):N){
-      if(porwd(c(weightsa,1),Pprime1[[i]],Pprime1[[j]])==porwd(c(weightsa,1),matrixcoeff1%*%ordprod(Plist1[[i]],Plist2[[i]]),matrixcoeff1%*%ordprod(Plist1[[j]],Plist2[[j]]))){
+      if(porwd(c(weightsa,1),Pprime1[[i]],Pprime1[[j]])==porwd(c(weightsa,1),matrixcoeff1%*%tensor_product_ordered(Plist1[[i]],Plist2[[i]])$product,matrixcoeff1%*%tensor_product_ordered(Plist1[[j]],Plist2[[j]])$product)){
           indporwd=indporwd+1
       }
     }
@@ -258,7 +257,7 @@ for(it in 1:iter){
 
   yestim1<-matrix(0,nrow=va,ncol=Cy)
   for(i in 1:va){
-    yestim1[i,]<-matrixcoeff1%*%ordprod(Plist1[[inva[i]]],Plist2[[inva[i]]] )
+    yestim1[i,]<-matrixcoeff1%*%tensor_product_ordered(Plist1[[inva[i]]],Plist2[[inva[i]]])$product
   }
   yerr1<-rep(0,va)
   for(i in 1:va){
@@ -363,4 +362,5 @@ apply(weightstot1,2,mean)
 apply(weightstot1,2,sd)
 apply(weightstot2,2,mean)
 apply(weightstot2,2,sd)
+
 
