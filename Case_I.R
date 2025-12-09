@@ -15,15 +15,15 @@ for(i in 1:dim(y)[1]){
 }
 weights<-c(median(ycdf[,2])-median(ycdf[,1]),median(ycdf[,3])-median(ycdf[,2]))
 
-ydati<-list()
-xdati<-list()
+ydata<-list()
+xdata<-list()
 for(i in 1:dim(y)[1]){
-  ydati[[i]]<-y[i,]
+  ydata[[i]]<-y[i,]
 }
 for(i in 1:dim(y)[1]){
-  xdati[[i]]<-x0[i,]
+  xdata[[i]]<-x0[i,]
 }
-sol<-solve_simplex_lp( xdati , ydati , weights )
+sol<-solve_simplex_lp( xdata , ydata , weights )
 mat<-sol$A
 
 #Scenario 2
@@ -166,15 +166,15 @@ for(i in 1:(Cy-1)){
   weights[i]<-median(ycdf[,i+1])-median(ycdf[,i])
 }
 
-ydati<-list()
-xdati<-list()
+ydata<-list()
+xdata<-list()
 for(i in 1:dim(y)[1]){
-  ydati[[i]]<-y[i,]
+  ydata[[i]]<-y[i,]
 }
 for(i in 1:dim(y)[1]){
-  xdati[[i]]<-x0[i,]
+  xdata[[i]]<-x0[i,]
 }
-sol<-solve_simplex_lp( xdati , ydati , weights )
+sol<-solve_simplex_lp( xdata , ydata , weights )
 mat<-sol$A
 
 #Simulation
@@ -315,7 +315,7 @@ for(it in 1:iter){
   for(i in 1:N){
     for(j in 1:N){
       if(i!=j){
-        if(porwd(c(weights,1),y1[i,],y1[j,])==2){
+        if(porwd(weights,y1[i,],y1[j,])==2){
           distot[i]=distot[i]+1
         }
       }
@@ -344,7 +344,7 @@ for(it in 1:iter){
   
   denw<-0
   for(i in 1:N){
-    denw=denw+wd(c(weights,1),ymedian,Pprime1[[i]])
+    denw=denw+wd(weights,ymedian,Pprime1[[i]])
   }
   denC<-0
   for(i in 1:N){
@@ -352,7 +352,7 @@ for(it in 1:iter){
   }
   SSRw<-0
   for(i in 1:N){
-    SSRw=SSRw+wd(c(weights,1),ymedian,matrixcoeff1%*%Plist[[i]])
+    SSRw=SSRw+wd(weights,ymedian,matrixcoeff1%*%Plist[[i]])
   }
   R2W<-SSRw/denw
   SSRc<-0
@@ -364,7 +364,7 @@ for(it in 1:iter){
   indporwd=0
   for(i in 1:(N-1)){
     for(j in (1+i):N){
-      if(porwd(c(weights,1),y1[i,],y1[j,])==porwd(c(weights,1),matrixcoeff1%*%x[i,],matrixcoeff1%*%x[j,])){
+      if(porwd(weights,y1[i,],y1[j,])==porwd(weights,matrixcoeff1%*%x[i,],matrixcoeff1%*%x[j,])){
         indporwd=indporwd+1
       }
     }
@@ -382,7 +382,7 @@ for(it in 1:iter){
   }
   yerr1<-rep(0,va)
   for(i in 1:va){
-    yerr1[i]<-wd(c(weights1,1),yestim1[i,],Pprime1[[inva[i]]])
+    yerr1[i]<-wd(weights1,yestim1[i,],Pprime1[[inva[i]]])
   }
   yestim2<-matrix(0,nrow=va,ncol=Cy)
   for(i in 1:va){
@@ -390,7 +390,7 @@ for(it in 1:iter){
   }
   yerr2<-rep(0,va)
   for(i in 1:va){
-    yerr2[i]<-wd(c(weights2,1),yestim2[i,],Pprime2[[inva[i]]])
+    yerr2[i]<-wd(weights2,yestim2[i,],Pprime2[[inva[i]]])
   }
   
   result[it,5]<-sum(yerr1)/va
@@ -428,4 +428,3 @@ apply(weightstot1,2,mean)
 apply(weightstot1,2,sd)
 apply(weightstot2,2,mean)
 apply(weightstot2,2,sd)
-
