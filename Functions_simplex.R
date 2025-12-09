@@ -135,7 +135,7 @@ do_loocv <- function(Z, Y, w, dims, lambda_seq) {
       test_Z <- Z[[k]]
       test_Y <- Y[[k]]
       
-      model <- solve_simplex_lp_reg(train_Z, train_Y, w, lambda=lam, dims_grid=dims)
+      model <- solve_simplex_lp(train_Z, train_Y, w, lambda=lam, dims_grid=dims)
       
       if(!is.null(model)) {
         pred <- as.vector(model$A %*% test_Z)
@@ -260,5 +260,6 @@ get_cloud_points <- function(matrix_list, col_idx) {
   df_xy$Column <- paste0("C", col_idx) 
   return(df_xy)
 }
+
 
 
