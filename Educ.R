@@ -1,3 +1,4 @@
+source(file="Functions_simplex.R")
 data("educFM")
 father <- as.matrix(educFM[,2:4])
 y <- father/rowSums(father)
@@ -14,35 +15,7 @@ ycdf <- matrix(0, nrow=N, ncol=Cy)
 for(i in 1:N){ ycdf[i,] <- cumsum(ydata[[i]]) }
 weights_orig <- c(median(ycdf[,2])-median(ycdf[,1]), median(ycdf[,3])-median(ycdf[,2]))
 
-cv_results <- do_loocv(
-  Z = xdata, 
-  Y = ydata, 
-  w = weights_orig, 
-  dims = Cx, 
-  lambda_seq = lambda_grid
-)
-
-#cat("\n\n--- RISULTATI LOOCV ---\n")
-#print(round(cv_results, 5))
-
-# Minimo
-best_idx <- which.min(cv_results$error)
-min_lambda <- cv_results$lambda[best_idx]
-#cat("\nLambda Minimo Errore:", min_lambda)
-min_err <- cv_results$error[best_idx]
-target_err <- min_err + cv_results$se[best_idx]
-
-# Plot
-plot(cv_results$lambda, cv_results$error, type="b", pch=19, main="LOOCV Error Curve",
-     xlab="Lambda", ylab="Mean Wasserstein Error", ylim=c(min(cv_results$error)*0.9, max(cv_results$error)*1.1))
-abline(v=min_lambda, col="red", lty=2)
-abline(h=target_err, col="gray", lty=3)
-legend("topright", legend=c("Min"), col=c("red"), lty=2)
-
-FINAL_LAMBDA <- min_lambda 
-
-cat(paste("\n\n Lambda Estimate =", FINAL_LAMBDA, "...\n"))
-final_model <- solve_simplex_lp_reg(xdata, ydata, weights, lambda = FINAL_LAMBDA, dims_grid = Cx1)
+final_model <- solve_simplex_lp(xdata, ydata, weights_orig)
 print(round(final_model$A, 4))
 A_hat<-final_model$A
 
