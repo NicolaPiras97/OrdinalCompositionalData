@@ -16,7 +16,6 @@ for(i in 1:N){ ycdf[i,] <- cumsum(ydata[[i]]) }
 weights_orig <- c(median(ycdf[,2])-median(ycdf[,1]), median(ycdf[,3])-median(ycdf[,2]))
 
 final_model <- solve_simplex_lp(xdata, ydata, weights_orig)
-print(round(final_model$A, 4))
 A_hat<-final_model$A
 
 cat("Original estimate A_hat\n")
