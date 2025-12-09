@@ -204,7 +204,7 @@ for(it in 1:iter){
   for(i in 1:N){
     for(j in 1:N){
       if(i!=j){
-        if(porwd(c(weightsa,1),Pprime1[[i]],Pprime1[[j]])==2){
+        if(porwd(weightsa,Pprime1[[i]],Pprime1[[j]])==2){
           distot[i]=distot[i]+1
         }
       }
@@ -233,19 +233,19 @@ for(it in 1:iter){
 
   denw<-0
   for(i in 1:N){
-    denw=denw+wd(c(weightsa,1),ymedian,Pprime1[[i]])
+    denw=denw+wd(weightsa,ymedian,Pprime1[[i]])
   }
 
   SSRw<-0
   for(i in 1:N){
-    SSRw=SSRw+wd(c(weightsa,1),ymedian,matrixcoeff1%*%tensor_product_ordered(Plist1[[i]],Plist2[[i]])$product)
+    SSRw=SSRw+wd(weightsa,ymedian,matrixcoeff1%*%tensor_product_ordered(Plist1[[i]],Plist2[[i]])$product)
     }
   R2W<-SSRw/denw
 
   indporwd=0
   for(i in 1:(N-1)){
     for(j in (1+i):N){
-      if(porwd(c(weightsa,1),Pprime1[[i]],Pprime1[[j]])==porwd(c(weightsa,1),matrixcoeff1%*%tensor_product_ordered(Plist1[[i]],Plist2[[i]])$product,matrixcoeff1%*%tensor_product_ordered(Plist1[[j]],Plist2[[j]])$product)){
+      if(porwd(weightsa,Pprime1[[i]],Pprime1[[j]])==porwd(weightsa,matrixcoeff1%*%tensor_product_ordered(Plist1[[i]],Plist2[[i]])$product,matrixcoeff1%*%tensor_product_ordered(Plist1[[j]],Plist2[[j]])$product)){
           indporwd=indporwd+1
       }
     }
@@ -261,7 +261,7 @@ for(it in 1:iter){
   }
   yerr1<-rep(0,va)
   for(i in 1:va){
-    yerr1[i]<-wd(c(weights1,1),yestim1[i,],Pprime1[[inva[i]]])
+    yerr1[i]<-wd(weights1,yestim1[i,],Pprime1[[inva[i]]])
   }
   
   result[it,3]<-sum(yerr1)/va
@@ -291,7 +291,7 @@ for(it in 1:iter){
   for(i in 1:N){
     for(j in 1:N){
       if(i!=j){
-        if(porwd(c(weightsb,1),y2[i,],y2[j,])==2){
+        if(porwd(weightsb,y2[i,],y2[j,])==2){
           distot[i]=distot[i]+1
         }
       }
@@ -319,19 +319,19 @@ for(it in 1:iter){
   }
   denw<-0
   for(i in 1:N){
-    denw=denw+wd(c(weightsb,1),ymedian,Pprime2[[i]])
+    denw=denw+wd(weightsb,ymedian,Pprime2[[i]])
   }
 
   SSRw<-0
   for(i in 1:N){
-    SSRw=SSRw+wd(c(weightsb,1),ymedian,matrixcoeff2%*%Plist1[[i]])
+    SSRw=SSRw+wd(weightsb,ymedian,matrixcoeff2%*%Plist1[[i]])
   }
   R2W<-SSRw/denw
 
   indporwd=0
   for(i in 1:(N-1)){
     for(j in (1+i):N){
-      if(porwd(c(weightsb,1),y2[i,],y2[j,])==porwd(c(weightsb,1),matrixcoeff2%*%Plist1[[i]],matrixcoeff2%*%Plist1[[j]])){
+      if(porwd(weightsb,y2[i,],y2[j,])==porwd(weightsb,matrixcoeff2%*%Plist1[[i]],matrixcoeff2%*%Plist1[[j]])){
         indporwd=indporwd+1
       }
     }
@@ -347,7 +347,7 @@ for(it in 1:iter){
   }
   yerr3<-rep(0,va)
   for(i in 1:va){
-    yerr3[i]<-wd(c(weights2,1),yestim3[i,],Pprime2[[inva[i]]])
+    yerr3[i]<-wd(weights2,yestim3[i,],Pprime2[[inva[i]]])
   }
   
   result[it,6]<-sum(yerr3)/va
@@ -362,6 +362,3 @@ apply(weightstot1,2,mean)
 apply(weightstot1,2,sd)
 apply(weightstot2,2,mean)
 apply(weightstot2,2,sd)
-
-
-
