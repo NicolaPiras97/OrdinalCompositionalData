@@ -115,7 +115,7 @@ for(it in 1:iter){
     
     x1[n,]<-rdirichlet(1,rep(1,Cx1))
     x2[n,]<-rdirichlet(1,rep(1,Cx2))
-    y1[n,]<-mat%*%ordprod(x1[n,],x2[n,])
+    y1[n,]<-mat%*%tensor_product_ordered(x1[n,],x2[n,])$product
     y1[n,]<-rdirichlet(1,10*y1[n,])
     
     y2[n,]<-mat2%*%x1[n,]
@@ -362,3 +362,4 @@ apply(weightstot1,2,mean)
 apply(weightstot1,2,sd)
 apply(weightstot2,2,mean)
 apply(weightstot2,2,sd)
+
