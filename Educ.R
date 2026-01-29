@@ -130,7 +130,7 @@ for(i in 1:N){
 }
 #OCC
 cat("\n--- ORDINAL COMPOSITIONAL CORRELATION (OCC) ---\n")
-print(cov(Ex,Ey)/(sd(Ex)*sd(Ey))*((N-1)/N))
+print(cov(Ex,Ey)/(sd(Ex)*sd(Ey)))
 
 ymean<-vector()
 for(j in 1:Cy){
@@ -153,7 +153,7 @@ distot<-rep(0,N)
 for(i in 1:N){
   for(j in 1:N){
     if(i!=j){
-    if(porwd(weights_orig,y[i,],y[j,])==2){
+    if(opiwd(weights_orig,y[i,],y[j,])==2){
     distot[i]=distot[i]+1
     }
     }
@@ -191,17 +191,17 @@ for(i in 1:N){
     denC=denC+kld(y[i,],ymean)
 }
 
-indporwd=0
+indopiwd=0
 for(i in 1:(N-1)){
   for(j in (1+i):N){
-    if(porwd(weights_orig,y[i,],y[j,])==porwd(weights_orig,A_hat%*%x[i,],A_hat%*%x[j,])){
-      indporwd=indporwd+1
+    if(opiwd(weights_orig,y[i,],y[j,])==opiwd(weights_orig,A_hat%*%x[i,],A_hat%*%x[j,])){
+      indopiwd=indopiwd+1
     }
   }
 }
-OPIwd=indporwd/choose(N,2)
+OPIwd=indopiwd/choose(N,2)
 cat("\n--- ORDINAL PRESERVATION INDEX (OPI) ---\n")
-print(OPIwd*((N-2)/N))
+print(OPIwd)
 
 SSRw<-0
 for(i in 1:N){
@@ -209,7 +209,7 @@ for(i in 1:N){
 }
 R2W<-SSRw/denw
 cat("\n--- WASSERSTEIN R-SQUARED ---\n")
-print(R2W*((N-2)/N))
+print(R2W*((N-(Cx*(Cy-1)))/N))
 
 SSRc<-0
 for(i in 1:N){
@@ -217,4 +217,4 @@ for(i in 1:N){
 }
 R2C<-SSRc/denC
 cat("\n--- KLD R-SQUARED ---\n")
-print(R2C*((N-2)/N))
+print(R2C*((N-(Cx*(Cy-1)))/N))
