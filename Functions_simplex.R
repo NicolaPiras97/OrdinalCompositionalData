@@ -197,22 +197,45 @@ matrix_wasserstein_dist <- function(A, B, weights) {
 ###########################################################
 inv_logit <- function(logit) exp(logit) / (1 + exp(logit))
 
-porwd<-function(weights,P,Q){
-  n<-length(P)
-  m<-length(Q)
-  if (n!=m){
-    stop("P and Q must have the same length!")
+opiwd <- function(weights, P, Q, tol = 1e-8) {
+  n <- length(P)
+  
+  for (k in 1:n) {
+    ek <- rep(0, n)
+    ek[k] <- 1
+    
+    dP <- wd(weights, P, ek)
+    dQ <- wd(weights, Q, ek)
+    
+    if (dP > dQ + tol) return(-1)  # P < Q
+    if (dP < dQ - tol) return(1)   # P > Q
   }
-  #1 P<Q; 2 P>Q; 3 P=Q
-  if(wd(weights,P,c(1,rep(0,n-1)))>wd(weights,Q,c(1,rep(0,n-1)))){
-    return(1)
+  
+  return(0)  # P == Q
+}
+
+opi <- function(P, Q, tol = 1e-8) {
+  n <- length(P)
+  
+  cP <- cumsum(P)[1:(n-1)]
+  cQ <- cumsum(Q)[1:(n-1)]
+  
+  leq <- cP <= cQ + tol
+  geq <- cP >= cQ - tol
+  
+  if (all(leq) && any(cP < cQ - tol)) {
+    return(-1)   # P < Q
   }
-  if(wd(weights,P,c(1,rep(0,n-1)))<wd(weights,Q,c(1,rep(0,n-1)))){
-    return(2)
+  
+  if (all(geq) && any(cP > cQ + tol)) {
+    return(1)    # P > Q
   }
-  if(wd(weights,P,c(1,rep(0,n-1)))==wd(weights,Q,c(1,rep(0,n-1)))){
-    return(3)
+  
+  if (all(abs(cP - cQ) < tol)) {
+    return(2)    # equivalenti
   }
+  
+  return(0)     # non confrontabili
 }
 
 ####################################à
@@ -260,6 +283,3 @@ get_cloud_points <- function(matrix_list, col_idx) {
   df_xy$Column <- paste0("C", col_idx) 
   return(df_xy)
 }
-
-
-
