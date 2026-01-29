@@ -155,6 +155,13 @@ do_loocv <- function(Z, Y, w, dims, lambda_seq) {
   return(results)
 }
 
+
+calc_wrps <- function(P, Q, weights) {
+  m <- length(P)
+  F_P <- cumsum(P); F_Q <- cumsum(Q)
+  return( sum(weights[1:(m-1)] * (F_P[1:(m-1)] - F_Q[1:(m-1)])^2) )
+}                                                                              
+
 #Grid
 lambda_grid <- c(0, 0.002, 0.005, 0.008, 0.01, 0.012, 0.015, 0.018, 0.02, 0.025, 0.03, 0.05, 0.1)
                                                                               
@@ -283,3 +290,4 @@ get_cloud_points <- function(matrix_list, col_idx) {
   df_xy$Column <- paste0("C", col_idx) 
   return(df_xy)
 }
+
