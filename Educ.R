@@ -209,15 +209,7 @@ for(i in 1:N){
 }
 R2W<-SSRw/denw
 cat("\n--- WASSERSTEIN R-SQUARED ---\n")
-print(R2W*((N-(Cx*(Cy-1)))/N))
-
-SSRc<-0
-for(i in 1:N){
-  SSRc=SSRc+kld(t(AC)%*%xdata[[i]],ymean)
-}
-R2C<-SSRc/denC
-cat("\n--- KLD R-SQUARED ---\n")
-print(R2C*((N-(Cx*(Cy-1)))/N))
+print(R2W)
 
 ##############BOOTSTRAP USING WASSERSTEIN ORDER#################
 weightsB<-list()
