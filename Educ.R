@@ -11,11 +11,10 @@ Cx <- dim(x)[2]
 ydata <- list(); xdata <- list()
 for(i in 1:N){ ydata[[i]]<-y[i,]; xdata[[i]]<-x[i,] }
 
-ycdf <- matrix(0, nrow=N, ncol=Cy)
-for(i in 1:N){ ycdf[i,] <- cumsum(ydata[[i]]) }
-weights_orig <- c(median(ycdf[,2])-median(ycdf[,1]), median(ycdf[,3])-median(ycdf[,2]))
+weights_orig <- c(1,1)
 
-final_model <- solve_simplex_lp(xdata, ydata, weights_orig)
+res <- select_lambda(xdata, ydata, weights_orig, lambda_grid)
+final_model <- solve_simplex_lp(xdata, ydata, weights_orig, lambda = res$best_lambda)
 A_hat<-final_model$A
 
 cat("Original estimate A_hat\n")
@@ -27,7 +26,7 @@ AC<-(codalm(y,x))
 # BOOTSTRAP (Confidence regions)
 # ==============================================================================
 
-B_iter <- 20000 
+B_iter <- 1000 
 distances_W <- numeric(B_iter)
 A_boot_list <- list()
 cat(paste(" Bootstrap (", B_iter, " iteration)...\n", sep=""))
@@ -46,10 +45,11 @@ for(b in 1:B_iter) {
   
   y_mat_B <- do.call(rbind, ydataB)
   ycdfB <- t(apply(y_mat_B, 1, cumsum))
-  weightsB <- c(median(ycdfB[,2])-median(ycdfB[,1]), median(ycdfB[,3])-median(ycdfB[,2]))
+  weightsB <- c(1,1)
   
   # Solver
-  solB <- solve_simplex_lp(xdataB, ydataB, weightsB)
+  resB <- select_lambda(xdataB, ydataB, weightsB, lambda_grid)
+  solB <- solve_simplex_lp(xdataB, ydataB, weightsB, lambda = resB$best_lambda)
   A_boot <- solB$A
   A_boot_list[[b]] <- A_boot
   
@@ -60,7 +60,7 @@ for(b in 1:B_iter) {
 close(pb)
 
 radius_95 <- quantile(distances_W, 0.95)
-cat("\n\nRadius R95:", radius_95, "\n")
+cat("\n\nRadius R95:", radius_95/sum(weights_orig), "\n")
 
 valid_indices <- which(distances_W <= radius_95)
 valid_boots <- A_boot_list[valid_indices]
@@ -115,39 +115,17 @@ print(round(A_Freshet_W, 4))
 #########################################################
 # Indexes
 #########################################################
-                        
-Ex<-rep(0,N)
-for(i in 1:N){
-  for(k in 1:Cx){
-     Ex[i]=Ex[i]+k*x[i,k]
-  }
-}
-Ey<-rep(0,N)
-for(i in 1:N){
-  for(k in 1:Cy){
-    Ey[i]=Ey[i]+k*y[i,k]
-  }
-}
+
 #OCC
 cat("\n--- ORDINAL COMPOSITIONAL CORRELATION (OCC) ---\n")
-print(cov(Ex,Ey)/(sd(Ex)*sd(Ey)))
+print(OCC(x,y))
 
-ymean<-vector()
-for(j in 1:Cy){
-  ymean[j]=0
-}
 
+#R2
 ymedianw<-vector()
 for(j in 1:Cy){
   ymedianw[j]=0
 }
-
- for(j in 1:Cy){
-   for(i in 1:N){
-     ymean[j]<-ymean[j]+ydata[[i]][j]
-   }
- }
- ymean=ymean/N
 
 distot<-rep(0,N)
 for(i in 1:N){
@@ -185,12 +163,15 @@ denw<-0
 for(i in 1:N){
   denw=denw+wd(weights_orig,ymedianw,ydata[[i]])
 }
-
-denC<-0
+SSRw<-0
 for(i in 1:N){
-    denC=denC+kld(y[i,],ymean)
+  SSRw=SSRw+wd(weights_orig,ymedianw,A_hat%*%xdata[[i]])
 }
-
+R2W<-SSRw/denw
+cat("\n--- WASSERSTEIN R-SQUARED ---\n")
+print(R2W)
+                        
+#OPI
 indopiwd=0
 for(i in 1:(N-1)){
   for(j in (1+i):N){
@@ -202,14 +183,6 @@ for(i in 1:(N-1)){
 OPIwd=indopiwd/choose(N,2)
 cat("\n--- ORDINAL PRESERVATION INDEX (OPI) ---\n")
 print(OPIwd)
-
-SSRw<-0
-for(i in 1:N){
-  SSRw=SSRw+wd(weights_orig,ymedianw,A_hat%*%xdata[[i]])
-}
-R2W<-SSRw/denw
-cat("\n--- WASSERSTEIN R-SQUARED ---\n")
-print(R2W)
 
 ##############BOOTSTRAP USING WASSERSTEIN ORDER#################
 weightsB<-list()
@@ -227,12 +200,7 @@ for(i in 1:N){
   yB[i,]<-y[indexB[i],]
 }
 
-
-ycdf<-matrix(0,nrow=N,ncol=Cy)
-for(i in 1:N){
-  ycdf[i,]<-cumsum(yB[i,])
-}
-weightsB[[b]]<-c(median(ycdf[,2])-median(ycdf[,1]),median(ycdf[,3])-median(ycdf[,2]))
+weightsB[[b]]<-c(1,1)
 
 ydataB<-list()
 xdataB<-list()
@@ -242,7 +210,8 @@ for(i in 1:N){
 for(i in 1:N){
   xdataB[[i]]<-xB[i,]
 }
-solB<-solve_simplex_lp( xdataB , ydataB , weightsB[[b]] )
+resB <- select_lambda(xdataB, ydataB, weightsB[[b]], lambda_grid)
+solB<-solve_simplex_lp( xdataB , ydataB , weightsB[[b]], lambda = resB$best_lambda )
 Btot[[b]]<-solB$A
 
 for(j in 1:Cy){
