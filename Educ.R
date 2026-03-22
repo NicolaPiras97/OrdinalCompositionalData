@@ -122,54 +122,8 @@ print(OCC(x,y))
 
 
 #R2
-ymedianw<-vector()
-for(j in 1:Cy){
-  ymedianw[j]=0
-}
-
-distot<-rep(0,N)
-for(i in 1:N){
-  for(j in 1:N){
-    if(i!=j){
-    if(opiwd(weights_orig,y[i,],y[j,])==2){
-    distot[i]=distot[i]+1
-    }
-    }
-  }
-}
-i=1
-ordtot<-vector()
-for(j in 1:N){
-  if(length(which(distot==sort(distot,decreasing = F)[i]))==1){
-    ordtot[i]<-which(distot==sort(distot,decreasing = F)[i])
-  }
-  if(length(which(distot==sort(distot,decreasing = F)[i]))>1){
-    ordtot[i:(i+length(which(distot==sort(distot,decreasing = F)[i]))-1)]<-which(distot==sort(distot,decreasing = F)[i])
-  }
-  i=i+length(which(distot==sort(distot,decreasing = F)[i]))
-  if(length(ordtot==N)){
-    stop
-  }
-}
-if(N%%2==1){
-ymedianw<-y[ordtot[round(N/2)],]
-}
-if(N%%2==0){
-  ymedianw<-apply(cbind(y[ordtot[N/2],],y[ordtot[N/2+1],]),1,mean)
-}
-
-
-denw<-0
-for(i in 1:N){
-  denw=denw+wd(weights_orig,ymedianw,ydata[[i]])
-}
-SSRw<-0
-for(i in 1:N){
-  SSRw=SSRw+wd(weights_orig,ymedianw,A_hat%*%xdata[[i]])
-}
-R2W<-SSRw/denw
 cat("\n--- WASSERSTEIN R-SQUARED ---\n")
-print(R2W)
+print(compute_R2(y,x,A_hat,weights_orig)$R2)
                         
 #OPI
 indopiwd=0
