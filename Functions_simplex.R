@@ -153,8 +153,7 @@ select_lambda <- function(P_list, P_prime_list, a_weights, lambda_grid){
     # df effettivo ≈ trace(H), H = Σ^2/(Σ^2 + λ)
     #df <- sum(sigma^2 / (sigma^2 + lam))
     #sigma <- sigma[sigma > 1e-3]    # ignora valori molto piccoli
-    sigma_norm <- sigma / sum(sigma)
-    df <- sum(sigma_norm^2 / (sigma_norm^2 + lam))
+    df <- sum(sigma^2 / (sigma^2 + lam))
     
     n <- length(P_list) * (nrow(A_hat)-1)
     gcv_values[i] <- fit / (max(n - df,1)^2)
