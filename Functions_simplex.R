@@ -12,6 +12,14 @@ library(CUB)
 library(compositions)
 library(ggplot2)
 
+safe_dirichlet <- function(alpha, scale = 10, eps = 1e-6){
+  alpha <- scale * alpha
+  alpha[alpha < eps] <- eps
+  alpha[!is.finite(alpha)] <- eps
+  return(rdirichlet(1, alpha))
+}
+
+
 solve_simplex_lp<-function(P_list, P_prime_list, a_weights, lambda = 0) {
   
   N <- length(P_list)
@@ -312,6 +320,66 @@ opi <- function(P, Q, tol = 1e-8) {
   }
   
   return(0)     # non confrontabili
+}
+
+compute_R2 <- function(Y, X, A, weights){
+
+  N <- nrow(Y)
+  Cy <- ncol(Y)
+  
+  # --- funzione mediana Wasserstein ---
+  compute_wmedian <- function(mat, weights){
+    distot <- rep(0, nrow(mat))
+    
+    for(i in 1:nrow(mat)){
+      for(j in 1:nrow(mat)){
+        if(i != j){
+          if(opiwd(weights, mat[i,], mat[j,]) == 1){
+            distot[i] <- distot[i] + 1
+          }
+        }
+      }
+    }
+    
+    ord <- order(distot)
+    
+    if(nrow(mat) %% 2 == 1){
+      return(mat[ord[round(nrow(mat)/2)], ])
+    } else {
+      return((mat[ord[nrow(mat)/2], ] +
+              mat[ord[nrow(mat)/2 + 1], ]) / 2)
+    }
+  }
+  
+  ymed <- compute_wmedian(Y, weights)
+  
+  pred <- matrix(0, nrow = N, ncol = Cy)
+  for(i in 1:N){
+    pred[i, ] <- as.vector(A %*% X[i, ])
+  }
+  
+  SSE <- 0
+  SST <- 0
+  
+  for(i in 1:N){
+    SSE <- SSE + wd(weights, Y[i, ], pred[i, ])
+    SST <- SST + wd(weights, Y[i, ], ymed)
+  }
+  
+  # --- R2 ---
+  if(SST == 0){
+    return(NA)  # evita divisione per zero
+  }
+  
+  R2 <- 1 - SSE / SST
+  
+  return(list(
+    R2 = R2,
+    SSE = SSE,
+    SST = SST,
+    y_median = ymed,
+    pred = pred
+  ))
 }
 
 #############plot functions################
