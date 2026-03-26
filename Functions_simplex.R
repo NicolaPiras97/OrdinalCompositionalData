@@ -121,59 +121,135 @@ solve_simplex_lp<-function(P_list, P_prime_list, a_weights, lambda = 0) {
 }
 
 select_lambda <- function(P_list, P_prime_list, a_weights, lambda_grid){
-  
-  compute_fit <- function(A, P_list, P_prime_list){
-    N <- length(P_list)
-    m <- length(P_prime_list[[1]])
-    fit <- 0
-    for(i in 1:N){
-      F_mix <- rep(0, m)
-      for(j in 1:length(P_list[[i]])){
-        F_mix <- F_mix + P_list[[i]][j] * cumsum(A[,j])
-      }
-      fit <- fit + sum(abs(F_mix[-m] - cumsum(P_prime_list[[i]])[-m]))
+    
+    compute_fit <- function(A, P_list, P_prime_list){
+        N <- length(P_list)
+        m <- length(P_prime_list[[1]])
+        fit <- 0
+        for(i in 1:N){
+            F_mix <- rep(0, m)
+            for(j in 1:length(P_list[[i]])){
+                F_mix <- F_mix + P_list[[i]][j] * cumsum(A[,j])
+            }
+            fit <- fit + sum((F_mix[-m] - cumsum(P_prime_list[[i]])[-m])^2) # quadrato per LOOCV
+        }
+        return(fit)
     }
-    return(fit)
-  }
-  
-  gcv_values <- numeric(length(lambda_grid))
-  fit_values <- numeric(length(lambda_grid))
-  
-  for(i in seq_along(lambda_grid)){
-    lam <- lambda_grid[i]
-    res <- solve_simplex_lp(P_list, P_prime_list, a_weights, lambda = lam)
-    if(is.null(res)) next
-    A_hat <- res$A
-    fit <- compute_fit(A_hat, P_list, P_prime_list)
-    fit_values[i] <- fit
     
-    # --- SVD e df effettivo ---
-    svd_res <- svd(A_hat)
-    sigma <- svd_res$d
-    # df effettivo ≈ trace(H), H = Σ^2/(Σ^2 + λ)
-    #df <- sum(sigma^2 / (sigma^2 + lam))
-    #sigma <- sigma[sigma > 1e-3]    # ignora valori molto piccoli
-    df <- sum(sigma^2 / (sigma^2 + lam))
+    gcv_values <- numeric(length(lambda_grid))
+    fit_values <- numeric(length(lambda_grid))
     
-    n <- length(P_list) * (nrow(A_hat)-1)
-    gcv_values[i] <- fit / (max(n - df,1)^2)
-  }
-  
-  best_idx <- which.min(gcv_values)
-  
-  return(list(
-    best_lambda = lambda_grid[best_idx],
-    gcv_values = gcv_values,
-    fit_values = fit_values,
-    lambda_grid = lambda_grid
-  ))
+    for(i in seq_along(lambda_grid)){
+        lam <- lambda_grid[i]
+        res <- solve_simplex_lp(P_list, P_prime_list, a_weights, lambda = lam)
+        if(is.null(res)) next
+        A_hat <- res$A
+        fit <- compute_fit(A_hat, P_list, P_prime_list)
+        fit_values[i] <- fit
+        
+        # --- LOOCV / GCV classica ---
+        svd_res <- svd(A_hat)
+        sigma <- svd_res$d
+        #sigma <- sigma[sigma > 1e-6]           # ignora valori troppo piccoli
+        df <- sum(sigma^2 / (sigma^2 + lam))   # df effettivo
+        
+        n <- length(P_list) * (nrow(A_hat)-1)  # numero totale di osservazioni
+        gcv_values[i] <- fit / (max(n - df, 1)^2)
+    }
+    
+    best_idx <- which.min(gcv_values)
+    
+    return(list(
+        best_lambda = lambda_grid[best_idx],
+        gcv_values = gcv_values,
+        fit_values = fit_values,
+        lambda_grid = lambda_grid
+    ))
 }
 
+select_weights_y_wass <- function(x1, x2, ydata, a, b, lambda_grid){
+  
+  weight_profiles <- list(c(1,1,1), c(1,2,3), c(1,2,1), c(1,1,2), c(2,1,1), c(2,2,1), c(2,1,2), c(3,2,1))
+  
+  # --- costruzione Z_data ---
+  Z_data <- lapply(1:nrow(x1), function(i){
+    tensor_product(
+      comps = list(x1[i,], x2[i,]),
+      list(a, b)
+    )$product
+  })
+  
+  results <- list()
+  
+  for(i in seq_along(weight_profiles)){
+    
+    w_raw <- weight_profiles[[i]]
+    weights <- w_raw / sum(w_raw)
+    
+    # --- selezione lambda ---
+    res <- select_lambda_loocv(
+      P_list = Z_data,
+      P_prime_list = ydata,
+      a_weights = weights,
+      lambda_grid = lambda_grid
+    )
+    
+    if(is.null(res) || all(is.na(res$gcv_values))) next
+    
+    best_lambda <- res$best_lambda
+    
+    # --- stima A ---
+    A_hat <- solve_simplex_lp(Z_data, ydata, weights, best_lambda)$A
+    
+    # --- costruisci X matriciale ---
+    X_mat <- do.call(rbind, Z_data)
+    Y <- do.call(rbind, ydata)
+    
+    # --- calcolo R2 Wasserstein ---
+    r2_res <- compute_R2(
+      Y = Y,
+      X = X_mat,
+      A = A_hat,
+      weights = weights
+    )
+    
+    results[[i]] <- list(
+      weights = weights,
+      weights_raw = w_raw,
+      lambda = best_lambda,
+      SSE = r2_res$SSE,
+      R2 = r2_res$R2
+    )
+  }
+  
+  # --- selezione finale ---
+  SSE_vec <- sapply(results, function(x) x$SSE)
+  min_SSE <- min(SSE_vec, na.rm = TRUE)
+  
+  # tolleranza numerica
+  tol <- 1e-6
+  candidates <- results[abs(SSE_vec - min_SSE) < tol]
+  
+  if(length(candidates) > 1){
+    R2_vec <- sapply(candidates, function(x) x$R2)
+    best_idx <- which.max(R2_vec)
+    best <- candidates[[best_idx]]
+  } else {
+    best <- candidates[[1]]
+  }
+  
+  return(list(
+    best = best,
+    all_results = results
+  ))
+}
+                        
+                         
 OCC <- function(P, Pprime) {
   
   # check dimensioni
   if(nrow(P) != nrow(Pprime)) {
-    stop("Le due matrici devono avere lo stesso numero di osservazioni")
+    stop("The 2 matrices must have the same numbers of observations")
   }
   
   N <- nrow(P)
