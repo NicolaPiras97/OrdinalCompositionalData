@@ -477,3 +477,172 @@ get_cloud_points <- function(matrix_list, col_idx) {
   return(df_xy)
 }
 
+################sim functions###############################
+generate_ordinal_data <- function(
+    N = 200,
+    Cx = 5,
+    Cy = 8,
+    dgp_type = "laplace",      # "laplace", "shift", "gaussian"
+    lambda = 1.5,              # usato in laplace
+    sigma = 1.2,               # usato in gaussian
+    alpha_dir = 60,            # concentrazione Dirichlet
+    equidistance = TRUE,       # default supporto equispaziato
+    gamma = 1.5,               # usato se equidistance = FALSE
+    latent_thresholds = NULL   # nuovo: vettore per salti non equispaziati
+){
+  
+  # ----- coordinate ordinali -----
+  zx <- 1:Cx
+  
+  if(!is.null(latent_thresholds)){
+    if(length(latent_thresholds) != Cy){
+      stop("latent_thresholds must have length Cy")
+    }
+    zy <- latent_thresholds
+  } else if(equidistance){
+    zy <- 1:Cy
+  } else {
+    zy <- (1:Cy)^gamma
+  }
+  
+  # ----- inizializzo matrici -----
+  x0 <- matrix(0, N, Cx)
+  y  <- matrix(0, N, Cy)
+  
+  for(n in 1:N){
+    # X generato da Dirichlet uniforme
+    x0[n,] <- rdirichlet(1, rep(1, Cx))
+    
+    # score continuo latente
+    s <- sum(zx * x0[n,])
+    
+    if(dgp_type == "laplace"){
+      prob <- exp(-lambda * abs(zy - s))
+      prob <- prob / sum(prob)
+      y[n,] <- rdirichlet(1, alpha_dir * prob)
+      
+    } else if(dgp_type == "shift"){
+      s_round <- round(sum((1:Cx) * x0[n,]))
+      shift <- sample(c(-2,-1,0,1,2),
+                      1,
+                      prob = c(0.05,0.2,0.5,0.2,0.05))
+      target <- min(max(s_round + shift, 1), Cy)
+      #prob <- exp(-abs((1:Cy) - target))#kernel esponenziale
+      sigma_loc <- 0.8
+      prob <- exp(-((1:Cy - target)^2)/(2*sigma_loc^2))
+      prob <- prob / sum(prob)
+      y[n,] <- rdirichlet(1, alpha_dir * prob + 1)
+      
+    } else if(dgp_type == "gaussian"){
+      prob <- exp(-((zy - s)^2)/(2*sigma^2))
+      prob <- prob / sum(prob)
+      y[n,] <- rdirichlet(1, alpha_dir * prob)
+      
+    } else {
+      stop("dgp_type must be 'laplace', 'shift', or 'gaussian'")
+    }
+  }
+  
+  return(list(X = x0, Y = y))
+}
+
+
+generate_ordinal_data_2x <- function(
+    N = 200,
+    Cx1 = 4,
+    Cx2 = 4,
+    Cy = 6,
+    dgp_type = "gaussian",
+    lambda = 2,
+    sigma = 1.2,
+    alpha_dir = 80,
+    equidistance = TRUE,
+    gamma = 1.6,
+    w1 = 0.6,        
+    w2 = 0.4,        
+    w2_y1 = 0.05     
+){
+  
+  if(equidistance){
+    zx1 <- 1:Cx1
+    zx2 <- 1:Cx2
+    zy  <- 1:Cy
+  } else {
+    zx1 <- (1:Cx1)^gamma
+    zx2 <- (1:Cx2)^gamma
+    zy  <- (1:Cy)^gamma
+  }
+  
+  X1 <- matrix(0, N, Cx1)
+  X2 <- matrix(0, N, Cx2)
+  Y1 <- matrix(0, N, Cy)
+  Y2 <- matrix(0, N, Cy)
+  Y3 <- matrix(0, N, Cy)
+  
+  build_prob <- function(s){
+    if(dgp_type == "gaussian"){
+      p <- exp(-((zy - s)^2)/(2*sigma^2))
+    } else if(dgp_type == "laplace"){
+      p <- exp(-lambda * abs(zy - s))
+    } else if(dgp_type == "shift"){
+      s_round <- round(s)
+      #s_round <- round(sum((1:Cx) * x0[n,]))
+      
+      shift <- sample(c(-2,-1,0,1,2),
+                      1,
+                      prob=c(0.05,0.2,0.5,0.2,0.05))
+      
+      target <- min(max(s_round + shift, 1), Cy)
+      
+      #prob <- rep(0, Cy)
+      #prob[target] <- 1
+      p <- exp(-abs((1:Cy) - target))#kernel esponenziale
+      #sigma_loc=0.8
+      #prob <- exp(-((1:Cy - target)^2)/(2*sigma_loc^2)) #kernel gaussiano
+      #prob <- prob / sum(prob)
+    }
+    p/sum(p)
+  }
+  
+  for(n in 1:N){
+    
+    X1[n,] <- rdirichlet(1, rep(1, Cx1))
+    X2[n,] <- rdirichlet(1, rep(1, Cx2))
+    
+    s1 <- sum(zx1 * X1[n,])
+    s2 <- sum(zx2 * X2[n,])
+    
+    # -------------------------
+    # Y1 → X1 + X2 (X2 almonst irrilevant)
+    # -------------------------
+    s_y1 <- (1 - w2_y1) * s1 + w2_y1 * s2
+    
+    # -------------------------
+    # Y2 → X1 + X2 both relevant
+    # -------------------------
+    s_y2 <- w1 * s1 + w2 * s2
+    
+    # -------------------------
+    # Y3 → SOLO X1
+    # -------------------------
+    s_y3 <- s1
+    
+    prob1 <- build_prob(s_y1)
+    prob2 <- build_prob(s_y2)
+    prob3 <- build_prob(s_y3)
+    
+    Y1[n,] <- rdirichlet(1, alpha_dir * prob1 + 1e-6)
+    Y2[n,] <- rdirichlet(1, alpha_dir * prob2 + 1e-6)
+    Y3[n,] <- rdirichlet(1, alpha_dir * prob3 + 1e-6)
+  }
+  
+  return(list(
+    X1 = X1,
+    X2 = X2,
+    Y1 = Y1,
+    Y2 = Y2,
+    Y3 = Y3
+  ))
+}
+
+
