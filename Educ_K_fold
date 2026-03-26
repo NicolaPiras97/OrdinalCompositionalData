@@ -1,0 +1,83 @@
+set.seed(123)
+
+K <- 5
+R <- 50
+
+wrps_mine_all    <- c()
+wrps_cod_all    <- c()
+
+brier_mine_all   <- c()
+brier_cod_all   <- c()
+
+for(r in 1:R){
+  
+  folds <- sample(rep(1:K, length.out=N))
+  
+  for(k in 1:K){
+    
+    train_idx <- which(folds != k)
+    test_idx  <- which(folds == k)
+    
+    x_train <- x[train_idx,]
+    y_train <- y[train_idx,]
+    
+    x_test  <- x[test_idx,]
+    y_test  <- y[test_idx,]
+    
+    # ---- MINE ----
+    x_train_mat <- x[train_idx,]
+    y_train_mat <- y[train_idx,]
+    
+    x_train_list <- lapply(1:nrow(x_train_mat), function(i) x_train_mat[i,])
+    y_train_list <- lapply(1:nrow(y_train_mat), function(i) y_train_mat[i,])
+    
+    reslambda <- select_lambda(x_train_list, y_train_list, weights, lambda_grid)
+    res <- solve_simplex_lp(x_train_list, y_train_list,weights, lambda = reslambda$best_lambda)
+    A_mine <- res$A
+    
+    # ----- CODALM
+    A_codalm <- codalm(y_train_mat, x_train_mat)
+    
+    # ---- TEST ----
+    for(i in 1:length(test_idx)){
+      
+      y_hat_mine <- as.vector(A_mine %*% x_test[i,])
+      y_hat_cod <- as.vector(t(A_codalm) %*% x_test[i,])
+      
+      # WRPS
+      wrps_mine_all <- c(wrps_mine_all,
+                        calc_wrps(y_hat_mine, y_test[i,]))
+      
+      wrps_cod_all <- c(wrps_cod_all,
+                        calc_wrps(y_hat_cod, y_test[i,]))
+      
+      # Brier
+      brier_mine_all <- c(brier_mine_all,
+                         calc_brier(y_hat_mine, y_test[i,]))
+      
+      brier_cod_all <- c(brier_cod_all,
+                         calc_brier(y_hat_cod, y_test[i,]))
+      
+    }
+  }
+}
+
+analyze_score <- function(score_mine, score_cod, name){
+  
+  diff <- score_mine - score_cod
+  
+  cat("\n=============================\n")
+  cat("Score:", name, "\n")
+  cat("=============================\n")
+  
+  cat("Mean mine:    ", mean(score_mine), "\n")
+  cat("Mean codalm: ", mean(score_cod), "\n")
+  cat("Diff mean:   ", mean(diff), "\n")
+  cat("Wins mine: ", mean(diff < 0), "\n")
+  
+  #print(wilcox.test(score_tuo, score_cod, paired=TRUE))
+}
+
+analyze_score(wrps_mine_all,  wrps_cod_all,  "WRPS")
+analyze_score(brier_mine_all, brier_cod_all, "Brier")
+
