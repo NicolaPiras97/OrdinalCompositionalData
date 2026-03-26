@@ -100,12 +100,13 @@ for(b in 1:B_iter) {
   }
   
   y_mat_B <- do.call(rbind, ydataB)
-  ycdfB <- t(apply(y_mat_B, 1, cumsum))
-  weightsB <- c(median(ycdfB[,2])-median(ycdfB[,1]), median(ycdfB[,3])-median(ycdfB[,2]), median(ycdfB[,4])-median(ycdfB[,3]))
+ 
+  weightsB <- weights
   
   # Solver
-  Z_dataB <-lapply(1:N, function(i) tensor_product_ordered(xdataB1[[i]],xdataB2[[i]] )$product)
-  solB <- solve_simplex_lp(Z_dataB, ydataB, weightsB)
+  Z_dataB <-lapply(1:N, function(i) tensor_product(comps=list(xdataB1[[i]],xdataB2[[i]]),list(a,b) )$product)
+  res_svdB <- select_lambda_loocv(Z_dataB, ydataB, weightsB, lambda_grid)
+  solB <- solve_simplex_lp(Z_dataB, ydataB, weightsB, lambda = res_svdB$best_lambda)
   A_boot <- solB$A
   A_boot_list[[b]] <- A_boot
   
@@ -116,7 +117,7 @@ close(pb)
 
 
 radius_95 <- quantile(distances_W, 0.95)
-cat("\n\nRadius R95:", radius_95, "\n")
+cat("\n\nRadius R95:", radius_95/sum(weights), "\n")
 
 valid_indices <- which(distances_W <= radius_95)
 valid_boots <- A_boot_list[valid_indices]
@@ -129,5 +130,6 @@ for(j in 1:(Cx1*Cx2)) {
   mat_cols_j  <- do.call(cbind, cols_j_list) 
   A_Freshet_W[, j] <- rowMeans(mat_cols_j)
 }
+colnames(A_Freshet_W) <- apply(indices_map, 1, function(v) paste0("(", v[1], ",", v[2], ")"))
 cat("\n--- FRÉCHET MEAN ---\n")
 print(round(A_Freshet_W, 4))
