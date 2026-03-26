@@ -1,5 +1,5 @@
 set.seed(123)
-
+source(file="Functions_simplex.R")
 K <- 5
 R <- 50
 
