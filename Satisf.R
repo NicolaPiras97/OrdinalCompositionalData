@@ -30,7 +30,7 @@ for(i in 1:N){
 xdata1 <- list()
 xdata2 <- list()
 ydata <- list(); Z_data <- list()
-
+a<-b<-c(1,1,1)
 weights<-select_weights(x1, x2, ydata, a, b, lambda_grid)$best$weights_raw
 
 for(i in 1:N){ 
