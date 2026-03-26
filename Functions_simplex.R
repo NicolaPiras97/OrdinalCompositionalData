@@ -167,7 +167,7 @@ select_lambda <- function(P_list, P_prime_list, a_weights, lambda_grid){
     ))
 }
 
-select_weights_y_wass <- function(x1, x2, ydata, a, b, lambda_grid){
+select_weights <- function(x1, x2, ydata, a, b, lambda_grid){
   
   weight_profiles <- list(c(1,1,1), c(1,2,3), c(1,2,1), c(1,1,2), c(2,1,1), c(2,2,1), c(2,1,2), c(3,2,1))
   
