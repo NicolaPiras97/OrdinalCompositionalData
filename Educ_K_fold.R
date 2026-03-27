@@ -2,6 +2,7 @@ set.seed(123)
 source(file="Functions_simplex.R")
 K <- 5
 R <- 50
+weights<-c(1,1)
 
 wrps_mine_all    <- c()
 wrps_cod_all    <- c()
