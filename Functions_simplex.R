@@ -187,7 +187,7 @@ select_weights <- function(x1, x2, ydata, a, b, lambda_grid){
     weights <- w_raw / sum(w_raw)
     
     # --- selezione lambda ---
-    res <- select_lambda_loocv(
+    res <- select_lambda(
       P_list = Z_data,
       P_prime_list = ydata,
       a_weights = weights,
