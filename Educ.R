@@ -26,14 +26,14 @@ AC<-(codalm(y,x))
 # BOOTSTRAP (Confidence regions)
 # ==============================================================================
 
-B_iter <- 1000 
-distances_W <- numeric(B_iter)
+B <- 1000 
+distances_W <- numeric(B)
 A_boot_list <- list()
-cat(paste(" Bootstrap (", B_iter, " iteration)...\n", sep=""))
-pb <- txtProgressBar(min = 0, max = B_iter, style = 3)
+cat(paste(" Bootstrap (", B, " iteration)...\n", sep=""))
+pb <- txtProgressBar(min = 0, max = B, style = 3)
 set.seed(123) 
 
-for(b in 1:B_iter) {
+for(b in 1:B) {
   indices <- sample(1:N, N, replace=TRUE)
   xdataB <- list(); ydataB <- list()
   
