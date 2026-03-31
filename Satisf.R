@@ -31,15 +31,17 @@ xdata1 <- list()
 xdata2 <- list()
 ydata <- list(); Z_data <- list()
 a<-b<-c(1,1,1)
-weights<-select_weights(x1, x2, ydata, a, b, lambda_grid)$best$weights_raw
-
 for(i in 1:N){ 
        xdata1[[i]]<-x1[i,]
        xdata2[[i]]<-x2[i,]
        ydata[[i]] <- y[i,]
-       Z_data[[i]] <- tensor_product(comps=list(x1[i,], x2[i,]),list(a,b),return_indices = TRUE)$product
-   }
-res_svd <- select_lambda_loocv(Z_data, ydata, weights, lambda_grid)
+}
+weights<-select_weights(x1, x2, ydata, a, b, lambda_grid)$best$weights_raw
+
+for(i in 1:N){ 
+      Z_data[[i]] <- tensor_product(comps=list(x1[i,], x2[i,]),list(a,b),return_indices = TRUE)$product
+}
+res_svd <- select_lambda(Z_data, ydata, weights, lambda_grid)
 #res_svd$best_lambda  # λ1 selezionato con GCV basato su SVD
 final_model <- solve_simplex_lp(Z_data, ydata, weights, lambda = res_svd$best_lambda)
 A_hat<-final_model$A
