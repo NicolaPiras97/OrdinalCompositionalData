@@ -107,12 +107,12 @@ for(b in 1:B_iter) {
   
   # Solver
   Z_dataB <-lapply(1:N, function(i) tensor_product(comps=list(xdataB1[[i]],xdataB2[[i]]),list(a,b) )$product)
-  res_svdB <- select_lambda_loocv(Z_dataB, ydataB, weightsB, lambda_grid)
+  res_svdB <- select_lambda(Z_dataB, ydataB, weightsB, lambda_grid)
   solB <- solve_simplex_lp(Z_dataB, ydataB, weightsB, lambda = res_svdB$best_lambda)
   A_boot <- solB$A
   A_boot_list[[b]] <- A_boot
   
-  distances_W[b] <- matrix_wasserstein_dist(A_hat, A_boot, weights_orig)
+  distances_W[b] <- matrix_wasserstein_dist(A_hat, A_boot, weights)
   setTxtProgressBar(pb, b)
 }
 close(pb)
