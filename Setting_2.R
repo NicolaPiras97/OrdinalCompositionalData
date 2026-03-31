@@ -101,7 +101,7 @@ s1 <- run_simulation_caseI(
 )
 
 #Case III
-run_simulation_caseII <- function(
+run_simulation_caseIII <- function(
     iter = 500,
     N = 100,
     Cx1 = 5,
@@ -208,7 +208,7 @@ run_simulation_caseII <- function(
   )
 }
 
-s2 <- run_simulation_caseII(
+s2 <- run_simulation_caseIII(
   iter = 500,
   N = 50,
   Cx1 = 5,
