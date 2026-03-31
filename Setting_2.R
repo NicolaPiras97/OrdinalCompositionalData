@@ -1,6 +1,6 @@
 source(file="Functions_simplex.R")
 #Case I
-run_simulation_dualweights <- function(
+run_simulation_caseI <- function(
     iter = 1000,
     N = 100,
     Cx = 5,
@@ -22,8 +22,6 @@ run_simulation_dualweights <- function(
     "OPI",
     "R2"
   )
-  
-  
   
   for(it in 1:iter){
     
@@ -93,10 +91,17 @@ run_simulation_dualweights <- function(
   )
 }
 
-
+s1 <- run_simulation_caseI(
+  iter = 500,
+  N = 50,
+  Cx = 3,
+  Cy = 3,
+  dgp_type = "laplace",
+  equidistance = TRUE
+)
 
 #Case III
-run_simulation_2x_compare <- function(
+run_simulation_caseII <- function(
     iter = 500,
     N = 100,
     Cx1 = 5,
@@ -202,3 +207,14 @@ run_simulation_2x_compare <- function(
     raw_results = result
   )
 }
+
+s2 <- run_simulation_caseII(
+  iter = 500,
+  N = 50,
+  Cx1 = 5,
+  Cx2 = 5,
+  Cy  = 5,
+  dgp_type = "laplace",
+  w1 = 0.6,
+  w2 = 0.4
+)
