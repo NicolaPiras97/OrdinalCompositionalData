@@ -180,7 +180,7 @@ for(i in 1:B){
   for(j in 1:B){
     if(i!=j){
     for(k in 1:Cy){
-    if(opiwd(weightsB[[b]],Btot[[i]][,k],Btot[[j]][,k])==2){
+    if(opiwd(weightsB[[b]],Btot[[i]][,k],Btot[[j]][,k])==1){
       distotB[i,k]=distotB[i,k]+1
     }
     }
