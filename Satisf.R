@@ -113,7 +113,7 @@ for(bi in 1:B_iter) {
   A_boot_list[[bi]] <- A_boot
   
   distances_W[bi] <- matrix_wasserstein_dist(A_hat, A_boot, weights)
-  setTxtProgressBar(pb, b)
+  setTxtProgressBar(pb, bi)
 }
 close(pb)
 
