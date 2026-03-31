@@ -90,7 +90,7 @@ cat(paste(" Bootstrap (", B_iter, " iteration)...\n", sep=""))
 pb <- txtProgressBar(min = 0, max = B_iter, style = 3)
 set.seed(123) 
 
-for(b in 1:B_iter) {
+for(bi in 1:B_iter) {
   indices <- sample(1:N, N, replace=TRUE)
   xdataB1 <- list();xdataB2 <- list(); ydataB <- list()
   
@@ -110,9 +110,9 @@ for(b in 1:B_iter) {
   res_svdB <- select_lambda(Z_dataB, ydataB, weightsB, lambda_grid)
   solB <- solve_simplex_lp(Z_dataB, ydataB, weightsB, lambda = res_svdB$best_lambda)
   A_boot <- solB$A
-  A_boot_list[[b]] <- A_boot
+  A_boot_list[[bi]] <- A_boot
   
-  distances_W[b] <- matrix_wasserstein_dist(A_hat, A_boot, weights)
+  distances_W[bi] <- matrix_wasserstein_dist(A_hat, A_boot, weights)
   setTxtProgressBar(pb, b)
 }
 close(pb)
