@@ -82,15 +82,15 @@ print(R2W)
 # 3. BOOTSTRAP 
 # ==============================================================================
 
-B_iter <- 1000
-distances_W <- numeric(B_iter)
+B <- 5000
+distances_W <- numeric(B)
 A_boot_list <- list()
 
-cat(paste(" Bootstrap (", B_iter, " iteration)...\n", sep=""))
-pb <- txtProgressBar(min = 0, max = B_iter, style = 3)
+cat(paste(" Bootstrap (", B, " iteration)...\n", sep=""))
+pb <- txtProgressBar(min = 0, max = B, style = 3)
 set.seed(123) 
 
-for(bi in 1:B_iter) {
+for(bi in 1:B) {
   indices <- sample(1:N, N, replace=TRUE)
   xdataB1 <- list();xdataB2 <- list(); ydataB <- list()
   
@@ -135,3 +135,139 @@ for(j in 1:(Cx1*Cx2)) {
 colnames(A_Freshet_W) <- apply(indices_map, 1, function(v) paste0("(", v[1], ",", v[2], ")"))
 cat("\n--- FRÉCHET MEAN ---\n")
 print(round(A_Freshet_W, 4))
+
+########################################
+weightsB<-list()
+Btot<-list()
+vartotc<-rep(0,Cy)
+for(bi in 1:B){
+  x1B<-matrix(0,nrow=N,ncol=Cx1)
+  x2B<-matrix(0,nrow=N,ncol=Cx2)
+  yB<-matrix(0,nrow=N,ncol=Cy)
+  indexB<-sample(1:N,N,replace=T)
+  for(i in 1:N){
+    x1B[i,]<-x1[indexB[i],]
+    x2B[i,]<-x2[indexB[i],]
+    yB[i,]<-y[indexB[i],]
+  }
+  
+  weightsB[[bi]]<-c(1,2,3)
+  
+  ydataB<-list()
+  x1dataB<-list()
+  x2dataB<-list()
+  for(i in 1:N){
+    ydataB[[i]]<-yB[i,]
+    x1dataB[[i]]<-x1B[i,]
+    x2dataB[[i]]<-x2B[i,]
+  }
+  Z_dataB <-lapply(1:N, function(i) tensor_product(comps=list(x1dataB[[i]],x2dataB[[i]]),list(a,b) )$product)
+  resB <- select_lambda(Z_dataB, ydataB, weightsB[[bi]], lambda_grid)
+  solB<-solve_simplex_lp( Z_dataB , ydataB , weightsB[[bi]], lambda = resB$best_lambda )
+  Btot[[bi]]<-solB$A
+  
+  for(j in 1:Cy){
+    vartotc[j]=vartotc[j]+wd(weightsB[[bi]],A_hat[,j],Btot[[bi]][,j])
+  }
+  
+}
+
+#95% confidence region
+distotB<-matrix(0,nrow=B,ncol=(Cx1*Cx2))
+for(i in 1:B){
+  for(j in 1:B){
+    if(i!=j){
+      for(k in 1:(Cx1*Cx2)){
+        if(opiwd(weightsB[[bi]],Btot[[i]][,k],Btot[[j]][,k])==1){
+          distotB[i,k]=distotB[i,k]+1
+        }
+      }
+    }
+  }
+}
+ordtotB<-matrix(0,nrow=B,ncol=(Cx1*Cx2))
+for(k in 1:(Cx1*Cx2)){
+  i=1
+  for(j in 1:B){
+    if(length(which(distotB[,k]==sort(distotB[,k],decreasing = F)[i]))==1){
+      ordtotB[i,k]<-which(distotB[,k]==sort(distotB[,k],decreasing = F)[i])
+    }
+    if(length(which(distotB[,k]==sort(distotB[,k],decreasing = F)[i]))>1){
+      ordtotB[i:(i+length(which(distotB[,k]==sort(distotB[,k],decreasing = F)[i]))-1),k]<-which(distotB[,k]==sort(distotB[,k],decreasing = F)[i])
+    }
+    i=i+length(which(distotB[,k]==sort(distotB[,k],decreasing = F)[i]))
+    if(length(ordtotB[,k]==B)){
+      stop
+    }
+  }
+}
+bmedianw<-matrix(0,nrow=Cy,ncol=(Cx1*Cx2))
+if(B%%2==1){
+  for(k in 1:(Cx1*Cx2)){
+    bmedianw[,k]<-Btot[[ordtotB[round(B/2),k]]][,k]
+  }
+}
+if(B%%2==0){
+  for(k in 1:(Cx1*Cx2)){
+    bmedianw[,k]<-apply(cbind(Btot[[ordtotB[B/2,k]]][,k],Btot[[ordtotB[B/2+1,k]]][,k]),1,mean)
+  }
+}
+
+binfw<-matrix(0,nrow=Cy,ncol=(Cx1*Cx2))
+if(B%%2==1){
+  for(k in 1:(Cx1*Cx2)){
+    binfw[,k]<-Btot[[ordtotB[round(B/40),k]]][,k]
+  }
+}
+if(B%%2==0){
+  for(k in 1:(Cx1*Cx2)){
+    binfw[,k]<-apply(cbind(Btot[[ordtotB[B/40,k]]][,k],Btot[[ordtotB[B/40+1,k]]][,k]),1,mean)
+  }
+}
+bsupw<-matrix(0,nrow=Cy,ncol=(Cx1*Cx2))
+if(B%%2==1){
+  for(k in 1:(Cx1*Cx2)){
+    bsupw[,k]<-Btot[[ordtotB[round(B/1.02555),k]]][,k]
+  }
+}
+if(B%%2==0){
+  for(k in 1:(Cx1*Cx2)){
+    bsupw[,k]<-apply(cbind(Btot[[ordtotB[B/1.02555,k]]][,k],Btot[[ordtotB[B/1.02555+1,k]]][,k]),1,mean)
+  }
+}
+
+bq1w<-matrix(0,nrow=Cy,ncol=(Cx1*Cx2))
+if(B%%2==1){
+  for(k in 1:(Cx1*Cx2)){
+    bq1w[,k]<-Btot[[ordtotB[round(B/4),k]]][,k]
+  }
+}
+if(B%%2==0){
+  for(k in 1:(Cx1*Cx2)){
+    bq1w[,k]<-apply(cbind(Btot[[ordtotB[B/4,k]]][,k],Btot[[ordtotB[B/4+1,k]]][,k]),1,mean)
+  }
+}
+
+bq3w<-matrix(0,nrow=Cy,ncol=(Cx1*Cx2))
+if(B%%2==1){
+  for(k in 1:(Cx1*Cx2)){
+    bq3w[,k]<-Btot[[ordtotB[round(B/1.33333),k]]][,k]
+  }
+}
+if(B%%2==0){
+  for(k in 1:(Cx1*Cx2)){
+    bq3w[,k]<-apply(cbind(Btot[[ordtotB[B/1.33333,k]]][,k],Btot[[ordtotB[B/1.33333+1,k]]][,k]),1,mean)
+  }
+}
+
+cat("\n--- Bootstrap median ---\n")
+print(round(bmedianw, 4))
+cat("\n--- Bootstrap inf ---\n")
+print(round(binfw, 4))
+cat("\n--- Bootstrap sup ---\n")
+print(round(bsupw, 4))
+cat("\n--- Bootstrap q1 ---\n")
+print(round(bq1w, 4))
+cat("\n--- Bootstrap q3 ---\n")
+print(round(bq3w, 4))
+                              
