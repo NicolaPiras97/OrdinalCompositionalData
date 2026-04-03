@@ -11,7 +11,8 @@ run_simulation <- function(
     alpha_dir = 80,
     train_ratio = 0.7,
     equidistance = TRUE,    
-    gamma = 1.6
+    gamma = 1.6,
+    prop_zero = 0
 ){
   
   result <- matrix(0, nrow = iter, ncol = 14)
@@ -72,6 +73,36 @@ run_simulation <- function(
     idx  <- sample(1:N, N)
     intr <- idx[1:tr]
     inva <- idx[(tr+1):N]
+
+    # --- FORZO PERCENTUALE DI ZERI NEL VALIDATION SET ---
+    if(prop_zero > 0){
+      total_cells <- length(inva) * Cy
+      n_zero <- floor(prop_zero * total_cells)
+      if(n_zero > 0){
+        val_matrix <- expand.grid(row = inva, col = 1:Cy)
+        
+        # y1
+        values_y1 <- mapply(function(r,c) y1[r,c], val_matrix$row, val_matrix$col)
+        ord_idx <- order(values_y1)
+        selected <- val_matrix[ord_idx[1:n_zero], ]
+        for(k in 1:nrow(selected)){
+          y1[selected$row[k], selected$col[k]] <- 0
+        }
+        # y2
+        values_y2 <- mapply(function(r,c) y2[r,c], val_matrix$row, val_matrix$col)
+        ord_idx <- order(values_y2)
+        selected <- val_matrix[ord_idx[1:n_zero], ]
+        for(k in 1:nrow(selected)){
+          y2[selected$row[k], selected$col[k]] <- 0
+        }
+        # rinormalizzazione
+        for(r in inva){
+          if(sum(y1[r,]) > 0) y1[r,] <- y1[r,] / sum(y1[r,])
+          if(sum(y2[r,]) > 0) y2[r,] <- y2[r,] / sum(y2[r,])
+        }
+      }
+    }
+                    
     
     Plist  <- lapply(1:N, function(i) x[i,])
     P1list <- lapply(1:N, function(i) y1[i,])
@@ -142,4 +173,82 @@ s1 <- run_simulation(
   Cy = 3,
   dgp_type = "laplace"
 )
-s1$win_rates                       
+s1$win_rates         
+
+#Plot Setting 4.2.1
+                        library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+# =========================
+# DATA COMPLETI (N = 100)
+# =========================
+
+data <- data.frame(
+  Cx = rep(c(3,7,5,3,5,5,7), each = 5),
+  Cy = rep(c(3,7,5,5,3,7,5), each = 5),
+  prop_zero = rep(c(0,0.1,0.2,0.3,0.4), 7),
+  
+  OT = c(
+    # (3,3)
+    0.530,0.492,0.550,0.704,0.802,
+    # (7,7)
+    0.742,0.698,0.750,0.744,0.732,
+    # (5,5)
+    0.579,0.602,0.574,0.636,0.656,
+    # (3,5)
+    0.558,0.538,0.536,0.550,0.590,
+    # (5,3)
+    0.548,0.544,0.542,0.668,0.804,
+    # (5,7)
+    0.596,0.538,0.606,0.592,0.578,
+    # (7,5)
+    0.730,0.738,0.718,0.754,0.754
+  ),
+  
+  COD = c(
+    # (3,3)
+    0.430,0.454,0.538,0.568,0.658,
+    # (7,7)
+    0.654,0.592,0.654,0.638,0.650,
+    # (5,5)
+    0.480,0.430,0.490,0.528,0.580,
+    # (3,5)
+    0.382,0.358,0.414,0.350,0.462,
+    # (5,3)
+    0.526,0.534,0.546,0.538,0.556,
+    # (5,7)
+    0.446,0.460,0.474,0.448,0.486,
+    # (7,5)
+    0.616,0.662,0.620,0.644,0.632
+  )
+)
+
+# =========================
+# LONG FORMAT
+# =========================
+
+data_long <- data %>%
+  pivot_longer(cols = c(OT, COD),
+               names_to = "DGP",
+               values_to = "WinRate")
+
+# =========================
+# PLOT
+# =========================
+
+p1<-ggplot(data_long, aes(x = prop_zero, y = WinRate,
+                      color = DGP, group = DGP)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2.5) +
+  facet_grid(Cx ~ Cy, labeller = label_both) +
+  labs(
+    x = "Proportion of zeros",
+    y = "Win rate (RPS)",
+    title = "Predictive performance under increasing zero inflation",
+    color = "DGP"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "top")
+p1
+
