@@ -17,13 +17,13 @@ run_simulation <- function(
   
   result <- matrix(0, nrow = iter, ncol = 14)
   colnames(result) <- c(
-    "WRPS_OT_OT","WRPS_COD_OT",
+    "RPS_OT_OT","RPS_COD_OT",
     "Brier_OT_OT","Brier_COD_OT",
-    "WRPS_OT_COD","WRPS_COD_COD",
+    "RPS_OT_COD","RPS_COD_COD",
     "Brier_OT_COD","Brier_COD_COD",
-    "Win_WRPS_OT_DGP","Win_Brier_OT_DGP",
-    "Win_WRPS_COD_DGP","Win_Brier_COD_DGP",
-    "Win_WRPS_TRUE_DGP","Win_Brier_TRUE_DGP"
+    "Win_RPS_OT_DGP","Win_Brier_OT_DGP",
+    "Win_RPS_COD_DGP","Win_Brier_COD_DGP",
+    "Win_RPS_TRUE_DGP","Win_Brier_TRUE_DGP"
   )
   
   for(it in 1:iter){
@@ -43,6 +43,40 @@ run_simulation <- function(
     
     x0 <- data$X
     y  <- data$Y
+
+    # --- TRAIN/VALID SPLIT ---
+    tr <- trunc(train_ratio * N)
+    va <- N - tr
+    
+    idx  <- sample(1:N, N)
+    intr <- idx[1:tr]
+    inva <- idx[(tr+1):N]
+
+    # --- FORZO PERCENTUALE DI ZERI NEL VALIDATION SET ---
+    if(prop_zero > 0){
+
+  # numero di righe da modificare
+  n_rows <- length(inva)
+  n_zero_rows <- floor(prop_zero * n_rows)
+
+  if(n_zero_rows > 0){
+
+    # selezione casuale delle righe nel validation set
+    selected_rows <- sample(inva, n_zero_rows, replace = FALSE)
+
+    for(r in selected_rows){
+
+      # indice della componente più grande
+      j_max <- which.max(y1[r,])
+
+      y[r, j_max] <- 0
+
+      if(sum(y[r,]) > 0){
+        y[r,] <- y[r,] / sum(y[r,])
+      }
+    }
+  }
+}
     
     # COD matrix from DGP
     Ac <- codalm(y, x0)
@@ -64,43 +98,6 @@ run_simulation <- function(
       x[n,]  <- rdirichlet(1, rep(1,Cx))
       y1[n,] <- safe_dirichlet(mat %*% x[n,])
       y2[n,] <- safe_dirichlet(t(Ac) %*% x[n,])
-    }
-    
-    # --- TRAIN/VALID SPLIT ---
-    tr <- trunc(train_ratio * N)
-    va <- N - tr
-    
-    idx  <- sample(1:N, N)
-    intr <- idx[1:tr]
-    inva <- idx[(tr+1):N]
-
-    # --- FORZO PERCENTUALE DI ZERI NEL VALIDATION SET ---
-    if(prop_zero > 0){
-      total_cells <- length(inva) * Cy
-      n_zero <- floor(prop_zero * total_cells)
-      if(n_zero > 0){
-        val_matrix <- expand.grid(row = inva, col = 1:Cy)
-        
-        # y1
-        values_y1 <- mapply(function(r,c) y1[r,c], val_matrix$row, val_matrix$col)
-        ord_idx <- order(values_y1)
-        selected <- val_matrix[ord_idx[1:n_zero], ]
-        for(k in 1:nrow(selected)){
-          y1[selected$row[k], selected$col[k]] <- 0
-        }
-        # y2
-        values_y2 <- mapply(function(r,c) y2[r,c], val_matrix$row, val_matrix$col)
-        ord_idx <- order(values_y2)
-        selected <- val_matrix[ord_idx[1:n_zero], ]
-        for(k in 1:nrow(selected)){
-          y2[selected$row[k], selected$col[k]] <- 0
-        }
-        # rinormalizzazione
-        for(r in inva){
-          if(sum(y1[r,]) > 0) y1[r,] <- y1[r,] / sum(y1[r,])
-          if(sum(y2[r,]) > 0) y2[r,] <- y2[r,] / sum(y2[r,])
-        }
-      }
     }
                     
     
@@ -176,7 +173,7 @@ s1 <- run_simulation(
 s1$win_rates         
 
 #Plot Setting 4.2.1
-                        library(dplyr)
+library(dplyr)
 library(tidyr)
 library(ggplot2)
 
