@@ -92,12 +92,9 @@ run_simulation_caseI <- function(
 }
 
 s1 <- run_simulation_caseI(
-  iter = 500,
-  N = 50,
+  N = 100,
   Cx = 3,
-  Cy = 3,
-  dgp_type = "laplace",
-  equidistance = TRUE
+  Cy = 3
 )
 
 #Case III
@@ -209,12 +206,8 @@ run_simulation_caseIII <- function(
 }
 
 s2 <- run_simulation_caseIII(
-  iter = 500,
-  N = 50,
+  N = 100,
   Cx1 = 5,
   Cx2 = 5,
-  Cy  = 5,
-  dgp_type = "laplace",
-  w1 = 0.6,
-  w2 = 0.4
+  Cy  = 5
 )
