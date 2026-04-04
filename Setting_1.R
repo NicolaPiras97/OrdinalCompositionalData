@@ -164,11 +164,9 @@ run_simulation <- function(
 }
 
 s1 <- run_simulation(
-  iter = 500,
-  N = 50,
+  N = 100,
   Cx = 5,
-  Cy = 3,
-  dgp_type = "laplace"
+  Cy = 5
 )
 s1$win_rates         
 
