@@ -1,16 +1,18 @@
 if(!require(lpSolveAPI)) install.packages("lpSolveAPI")
 if(!require(ggplot2)) install.packages("ggplot2")
 if(!require(codalm)) install.packages("codalm") 
-if(!require(gtools)) install.packages("gtools") 
-if(!require(CUB)) install.packages("CUB") 
+if(!require(gtools)) install.packages("gtools")  
 if(!require(compositions)) install.packages("compositions") 
+if(!require(dplyr)) install.packages("dplyr") 
+if(!require(tidyr)) install.packages("tidyr") 
 
 library(lpSolveAPI)
 library(gtools)
 library(codalm)
-library(CUB)
 library(compositions)
 library(ggplot2)
+library(dplyr)
+library(tidyr)
 
 safe_dirichlet <- function(alpha, scale = 10, eps = 1e-6){
   alpha <- scale * alpha
