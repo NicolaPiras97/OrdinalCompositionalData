@@ -5,6 +5,7 @@ if(!require(gtools)) install.packages("gtools")
 if(!require(compositions)) install.packages("compositions") 
 if(!require(dplyr)) install.packages("dplyr") 
 if(!require(tidyr)) install.packages("tidyr") 
+if(!require(reshape2)) install.packages("reshape2") 
 
 library(lpSolveAPI)
 library(gtools)
@@ -13,6 +14,7 @@ library(compositions)
 library(ggplot2)
 library(dplyr)
 library(tidyr)
+library(reshape2)
 
 safe_dirichlet <- function(alpha, scale = 10, eps = 1e-6){
   alpha <- scale * alpha
