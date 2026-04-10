@@ -67,7 +67,7 @@ run_simulation <- function(
     for(r in selected_rows){
 
       # indice della componente più grande
-      j_max <- which.max(y1[r,])
+      j_max <- which.max(y[r,])
 
       y[r, j_max] <- 0
 
