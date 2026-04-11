@@ -12,7 +12,8 @@ run_simulation <- function(
     train_ratio = 0.7,
     equidistance = TRUE,    
     gamma = 1.6,
-    prop_zero = 0
+    prop_zero = 0,
+    prop_inv=0
 ){
   
   result <- matrix(0, nrow = iter, ncol = 14)
@@ -74,6 +75,23 @@ run_simulation <- function(
       if(sum(y[r,]) > 0){
         y[r,] <- y[r,] / sum(y[r,])
       }
+    }
+  }
+}
+
+ if(prop_inv > 0){
+
+  n_rows <- length(inva)
+  n_inv_rows <- floor(prop_inv * n_rows)
+
+  if(n_inv_rows > 0){
+
+    selected_rows <- sample(inva, n_inv_rows, replace = FALSE)
+
+    for(r in selected_rows){
+
+      # inversione delle componenti
+      y[r, ] <- rev(y[r, ])
     }
   }
 }
@@ -301,4 +319,61 @@ scale_color_manual(values = c("OT" = "red", "COD" = "blue"))
 p2
 
 
-
+data_rps <- data.frame(
+     config = rep(c("(3,3)","(7,7)","(5,5)","(3,5)","(5,3)","(5,7)","(7,5)"), each = 4),
+     prop_inv = rep(c(0,0.2,0.4,0.6), 7),
+     
+     OT = c(
+         # (3,3)
+         0.0284,0.0279,0.0275,0.0267,
+         # (7,7)
+         0.0420,0.0420,0.0397,0.0393,
+         # (5,5)
+         0.0390,0.0380,0.0367,0.0355,
+         # (3,5)
+         0.0321,0.0323,0.0322,0.0328,
+         # (5,3)
+         0.0215,0.0217,0.0219,0.0235,
+         # (5,7)
+         0.0396,0.0394,0.0391,0.0387,
+         # (7,5)
+         0.0385,0.0382,0.0378,0.0380
+     ),
+     
+     COD = c(
+         # (3,3)
+         0.0286,0.0290,0.0299,0.0322,
+         # (7,7)
+         0.0512,0.0538,0.0577,0.0592,
+         # (5,5)
+         0.0410,0.0425,0.0443,0.0471,
+         # (3,5)
+         0.0328,0.0430,0.0600,0.0813,
+         # (5,3)
+         0.0239,0.0324,0.0451,0.0600,
+         # (5,7)
+         0.0424,0.0528,0.0691,0.0890,
+         # (7,5)
+         0.0447,0.0563,0.0706,0.0891
+     )
+ )
+ 
+ # long format
+ library(reshape2)
+ data_long <- melt(data_rps, id.vars = c("config","prop_inv"),
+                   variable.name = "Method", value.name = "RPS")
+ 
+ # plot
+ p3<-ggplot(data_long, aes(x = prop_inv, y = RPS, color = Method)) +
+     geom_line(size = 1.2) +
+     geom_point(size = 2) +
+     facet_wrap(~config, scales = "free_y") +
+     labs(
+         title = "Mean RPS with Inversions (N = 100)",
+         x = "Proportion of inversions",
+         y = "Mean RPS"
+     ) +
+     theme_minimal()+
+     scale_color_manual(values = c("OT" = "red", "COD" = "blue"))
+ p3
+ 
