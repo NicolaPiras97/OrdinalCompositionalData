@@ -12,7 +12,8 @@ run_simulation <- function(
     train_ratio = 0.7,
     equidistance = TRUE,    
     gamma = 1.6,
-    prop_zero = 0,
+    prop_zero_max = 0,
+    prop_zero =0,
     prop_inv=0
 ){
   
@@ -54,7 +55,7 @@ run_simulation <- function(
     inva <- idx[(tr+1):N]
 
     # --- FORZO PERCENTUALE DI ZERI NEL VALIDATION SET ---
-    if(prop_zero > 0){
+    if(prop_zero_max > 0){
 
   # numero di righe da modificare
   n_rows <- length(inva)
@@ -74,6 +75,50 @@ run_simulation <- function(
 
       if(sum(y[r,]) > 0){
         y[r,] <- y[r,] / sum(y[r,])
+      }
+    }
+  }
+}
+
+if(prop_zero > 0){
+
+  n_rows <- length(inva)
+  n_zero_rows <- floor(prop_zero * n_rows)
+
+  if(n_zero_rows > 0){
+
+    selected_rows <- sample(inva, n_zero_rows, replace = FALSE)
+
+    for(r in selected_rows){
+
+      n_comp <- ncol(y)
+
+      # quante componenti annullare
+      k <- 1
+
+      # indici candidati (solo quelli > 0 per evitare inutilità)
+      non_zero_idx <- which(y[r, ] > 0)
+
+      # se ci sono abbastanza componenti non nulle
+      if(length(non_zero_idx) >= k){
+
+        j_sel <- sample(non_zero_idx, k, replace = FALSE)
+
+      } else {
+        # fallback: prendi da tutte le colonne
+        j_sel <- sample(seq_len(n_comp), k, replace = FALSE)
+      }
+
+      # annulla le componenti selezionate
+      y[r, j_sel] <- 0
+
+      # rinormalizza
+      s <- sum(y[r,])
+      if(s > 0){
+        y[r,] <- y[r,] / s
+      } else {
+        # fallback opzionale (evita riga tutta zero)
+        y[r,] <- rep(1/ncol(y), ncol(y))
       }
     }
   }
