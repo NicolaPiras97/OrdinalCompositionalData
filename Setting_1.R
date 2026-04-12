@@ -94,7 +94,7 @@ if(prop_zero > 0){
       n_comp <- ncol(y)
 
       # quante componenti annullare
-      k <- 1
+      k <- if(n_comp >= 5) 2 else 1
 
       # indici candidati (solo quelli > 0 per evitare inutilità)
       non_zero_idx <- which(y[r, ] > 0)
@@ -235,7 +235,7 @@ s1$win_rates
 
 
 # =========================
-# DATA  (N = 100)
+# DATA  (N = 100) plot zeros max
 # =========================
 
 data <- data.frame(
@@ -305,7 +305,7 @@ p1<-ggplot(data_long, aes(x = prop_zero, y = WinRate,
   theme(legend.position = "top")
 p1
 
-
+#plot zeros maz
 data_rps <- data.frame(
   config = rep(c("(3,3)","(7,7)","(5,5)","(3,5)","(5,3)","(5,7)","(7,5)"), each = 4),
   prop_zero = rep(c(0,0.2,0.4,0.6), 7),
@@ -363,7 +363,7 @@ p2<-ggplot(data_long, aes(x = prop_zero, y = RPS, color = Method)) +
 scale_color_manual(values = c("OT" = "red", "COD" = "blue"))
 p2
 
-
+#plot inverion
 data_rps <- data.frame(
      config = rep(c("(3,3)","(7,7)","(5,5)","(3,5)","(5,3)","(5,7)","(7,5)"), each = 4),
      prop_inv = rep(c(0,0.2,0.4,0.6), 7),
@@ -421,4 +421,63 @@ data_rps <- data.frame(
      theme_minimal()+
      scale_color_manual(values = c("OT" = "red", "COD" = "blue"))
  p3
+
+ #plot zeros random
+data_rps <- data.frame(
+     config = rep(c("(3,3)","(7,7)","(5,5)","(3,5)","(5,3)","(5,7)","(7,5)"), each = 4),
+     prop_zero = rep(c(0,0.2,0.4,0.6), 7),
+     
+     OT = c(
+         # (3,3)
+         0.0284,0.0285,0.0282,0.0286,
+         # (7,7)
+         0.0420,0.0419,0.0422,0.0414,
+         # (5,5)
+         0.0390,0.0388,0.0382,0.0383,
+         # (3,5)
+         0.0321,0.0323,0.0320,0.0317,
+         # (5,3)
+         0.0215,0.0216,0.0216,0.0215,
+         # (5,7)
+         0.0396,0.0395,0.0394,0.0395,
+         # (7,5)
+         0.0385,0.0387,0.0378,0.0370
+     ),
+     
+     COD = c(
+         # (3,3)
+         0.0286,0.0286,0.0295,0.0296,
+         # (7,7)
+         0.0512,0.0512,0.0513,0.0531,
+         # (5,5)
+         0.0410,0.0413,0.0415,0.0429,
+         # (3,5)
+         0.0328,0.0328,0.0329,0.0335,
+         # (5,3)
+         0.0239,0.0251,0.0256,0.0272,
+         # (5,7)
+         0.0424,0.0425,0.0426,0.0436,
+         # (7,5)
+         0.0447,0.0447,0.0448,0.0467
+     )
+ )
  
+ # long format
+ library(reshape2)
+ data_long <- melt(data_rps, id.vars = c("config","prop_zero"),
+                   variable.name = "Method", value.name = "RPS")
+ 
+ # plot
+ p4<-ggplot(data_long, aes(x = prop_zero, y = RPS, color = Method)) +
+     geom_line(size = 1.2) +
+     geom_point(size = 2) +
+     facet_wrap(~config, scales = "free_y") +
+     labs(
+         title = "Mean RPS with Zeri inflation (N = 100)",
+         x = "Proportion of zeros",
+         y = "Mean RPS"
+     ) +
+     theme_minimal()+
+     scale_color_manual(values = c("OT" = "red", "COD" = "blue"))
+ x11()
+ p4
