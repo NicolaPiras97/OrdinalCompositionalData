@@ -339,7 +339,7 @@ p1<-ggplot(data_long, aes(x = prop_zero, y = Win_Rate,
   theme(legend.position = "top")
 p1
 
-#plot zeros maz
+#plot zeros max
 data_rps <- data.frame(
   config = rep(c("(3,3)","(7,7)","(5,5)","(3,5)","(5,3)","(5,7)","(7,5)"), each = 4),
   prop_zero = rep(c(0,0.2,0.4,0.6), 7),
@@ -511,5 +511,64 @@ data_rps <- data.frame(
      ) +
      theme_minimal()+
      scale_color_manual(values = c("WD" = "red", "COD" = "blue"))
- x11()
  p4
+
+
+#plot zeros max 2
+data_rps <- data.frame(
+  config = rep(c("(3,3)","(7,7)","(5,5)","(3,5)","(5,3)","(5,7)","(7,5)"), each = 4),
+  prop_zero = rep(c(0,0.2,0.4,0.6), 7),
+  
+  WD = c(
+    # (3,3)
+    0.0284,0.0291,0.0287,0.0293,
+    # (7,7)
+    0.0420,0.0422,0.0423,0.0419,
+    # (5,5)
+    0.0390,0.0384,0.0383,0.0381,
+    # (3,5)
+    0.0321,0.0317,0.0319,0.0312,
+    # (5,3)
+    0.0215,0.0221,0.0218,0.0224,
+    # (5,7)
+    0.0396,0.0395,0.0396,0.0388,
+    # (7,5)
+    0.0385,0.0374,0.0375,0.0373
+  ),
+  
+  COD = c(
+    # (3,3)
+    0.0286,0.0305,0.0320,0.0342,
+    # (7,7)
+    0.0512,0.0509,0.0513,0.0516,
+    # (5,5)
+    0.0410,0.0409,0.0413,0.0405,
+    # (3,5)
+    0.0328,0.0323,0.0328,0.0318,
+    # (5,3)
+    0.0239,0.0271,0.0325,0.0387,
+    # (5,7)
+    0.0424,0.0423,0.0418,0.0417,
+    # (7,5)
+    0.0447,0.0443,0.0443,0.0449
+  )
+)
+
+# long format
+data_long <- melt(data_rps, id.vars = c("config","prop_zero"),
+                  variable.name = "Method", value.name = "RPS")
+
+# plot
+p5<-ggplot(data_long, aes(x = prop_zero, y = RPS, color = Method)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  facet_wrap(~config, scales = "free_y") +
+  labs(
+    title = "Mean RPS with Zero Inflation (N = 100)",
+    x = "Proportion of zeros",
+    y = "Mean RPS"
+  ) +
+  theme_minimal()+
+scale_color_manual(values = c("WD" = "red", "COD" = "blue"))
+p5
+
