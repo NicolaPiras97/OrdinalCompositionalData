@@ -277,7 +277,7 @@ data <- data.frame(
   Cy = rep(c(3,7,5,5,3,7,5), each = 4),
   prop_zero = rep(c(0,0.2,0.4,0.6), 7),
   
-  OT = c(
+  WD = c(
     # (3,3)
     0.530,0.535,0.586,0.680,
     # (7,7)
@@ -316,15 +316,15 @@ data <- data.frame(
 # =========================
 
 data_long <- data %>%
-  pivot_longer(cols = c(OT, COD),
+  pivot_longer(cols = c(WD, COD),
                names_to = "DGP",
-               values_to = "WinRate")
+               values_to = "Win_Rate")
 
 # =========================
 # PLOT
 # =========================
 
-p1<-ggplot(data_long, aes(x = prop_zero, y = WinRate,
+p1<-ggplot(data_long, aes(x = prop_zero, y = Win_Rate,
                       color = DGP, group = DGP)) +
   geom_line(size = 1.2) +
   geom_point(size = 2.5) +
@@ -344,7 +344,7 @@ data_rps <- data.frame(
   config = rep(c("(3,3)","(7,7)","(5,5)","(3,5)","(5,3)","(5,7)","(7,5)"), each = 4),
   prop_zero = rep(c(0,0.2,0.4,0.6), 7),
   
-  OT = c(
+  WD = c(
     # (3,3)
     0.0284,0.0291,0.0287,0.0293,
     # (7,7)
@@ -394,7 +394,7 @@ p2<-ggplot(data_long, aes(x = prop_zero, y = RPS, color = Method)) +
     y = "Mean RPS"
   ) +
   theme_minimal()+
-scale_color_manual(values = c("OT" = "red", "COD" = "blue"))
+scale_color_manual(values = c("WD" = "red", "COD" = "blue"))
 p2
 
 #plot inverion
@@ -402,7 +402,7 @@ data_rps <- data.frame(
      config = rep(c("(3,3)","(7,7)","(5,5)","(3,5)","(5,3)","(5,7)","(7,5)"), each = 4),
      prop_inv = rep(c(0,0.2,0.4,0.6), 7),
      
-     OT = c(
+     WD = c(
          # (3,3)
          0.0284,0.0279,0.0275,0.0267,
          # (7,7)
@@ -438,7 +438,6 @@ data_rps <- data.frame(
  )
  
  # long format
- library(reshape2)
  data_long <- melt(data_rps, id.vars = c("config","prop_inv"),
                    variable.name = "Method", value.name = "RPS")
  
@@ -453,7 +452,7 @@ data_rps <- data.frame(
          y = "Mean RPS"
      ) +
      theme_minimal()+
-     scale_color_manual(values = c("OT" = "red", "COD" = "blue"))
+     scale_color_manual(values = c("WD" = "red", "COD" = "blue"))
  p3
 
  #plot zeros random
@@ -461,7 +460,7 @@ data_rps <- data.frame(
      config = rep(c("(3,3)","(7,7)","(5,5)","(3,5)","(5,3)","(5,7)","(7,5)"), each = 4),
      prop_zero = rep(c(0,0.2,0.4,0.6), 7),
      
-     OT = c(
+     WD = c(
          # (3,3)
          0.0284,0.0285,0.0282,0.0286,
          # (7,7)
@@ -497,7 +496,6 @@ data_rps <- data.frame(
  )
  
  # long format
- library(reshape2)
  data_long <- melt(data_rps, id.vars = c("config","prop_zero"),
                    variable.name = "Method", value.name = "RPS")
  
@@ -512,6 +510,6 @@ data_rps <- data.frame(
          y = "Mean RPS"
      ) +
      theme_minimal()+
-     scale_color_manual(values = c("OT" = "red", "COD" = "blue"))
+     scale_color_manual(values = c("WD" = "red", "COD" = "blue"))
  x11()
  p4
