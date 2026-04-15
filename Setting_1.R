@@ -13,6 +13,7 @@ run_simulation <- function(
     equidistance = TRUE,    
     gamma = 1.6,
     prop_zero_max = 0,
+    prop_zero_max2 = 0,
     prop_zero =0,
     prop_inv=0
 ){
@@ -73,6 +74,39 @@ run_simulation <- function(
 
       y[r, j_max] <- 0
 
+      if(sum(y[r,]) > 0){
+        y[r,] <- y[r,] / sum(y[r,])
+      }
+    }
+  }
+}
+
+if(prop_zero_max2 > 0){
+
+  # numero di righe da modificare
+  n_rows <- length(inva)
+  n_zero_rows <- floor(prop_zero * n_rows)
+
+  if(n_zero_rows > 0){
+
+    # selezione casuale delle righe nel validation set
+    selected_rows <- sample(inva, n_zero_rows, replace = FALSE)
+
+    for(r in selected_rows){
+
+      # controllo numero colonne
+      if(ncol(y) >= 5){
+        # indici delle due componenti più grandi
+        j_max <- order(y[r, ], decreasing = TRUE)[1:2]
+      } else {
+        # indice della componente più grande
+        j_max <- which.max(y[r, ])
+      }
+
+      # azzera le componenti selezionate
+      y[r, j_max] <- 0
+
+      # normalizzazione se la somma è positiva
       if(sum(y[r,]) > 0){
         y[r,] <- y[r,] / sum(y[r,])
       }
