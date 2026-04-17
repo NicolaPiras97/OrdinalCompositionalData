@@ -60,7 +60,7 @@ run_simulation <- function(
 
   # numero di righe da modificare
   n_rows <- length(inva)
-  n_zero_rows <- floor(prop_zero * n_rows)
+  n_zero_rows <- floor(prop_zero _max* n_rows)
 
   if(n_zero_rows > 0){
 
@@ -85,7 +85,7 @@ if(prop_zero_max2 > 0){
 
   # numero di righe da modificare
   n_rows <- length(inva)
-  n_zero_rows <- floor(prop_zero * n_rows)
+  n_zero_rows <- floor(prop_zero_max2 * n_rows)
 
   if(n_zero_rows > 0){
 
