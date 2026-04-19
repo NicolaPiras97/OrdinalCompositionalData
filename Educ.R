@@ -1,9 +1,18 @@
 source(file="Functions_simplex.R")
+
 data("educFM")
 father <- as.matrix(educFM[,2:4])
-y <- father/rowSums(father)
+ya <- father/rowSums(father)
 mother <- as.matrix(educFM[,5:7])
-x <- mother/rowSums(mother)
+xa <- mother/rowSums(mother)
+x<-matrix(0,nrow=dim(ya)[1],ncol=dim(ya)[2])
+x[,1]<-xa[,3]
+x[,2]<-xa[,2]
+x[,3]<-xa[,1]
+y<-matrix(0,nrow=dim(ya)[1],ncol=dim(ya)[2])
+y[,1]<-ya[,3]
+y[,2]<-ya[,2]
+y[,3]<-ya[,1]
 
 N <- dim(y)[1]
 Cy <- dim(y)[2]
@@ -66,7 +75,7 @@ valid_indices <- which(distances_W <= radius_95)
 valid_boots <- A_boot_list[valid_indices]
 
 # ==================================================
-# PLOT
+# PLOT (ordine: High, Medium, Low)
 # ==================================================
 
 # clouds
@@ -75,7 +84,7 @@ cloud_c2 <- get_cloud_points(valid_boots, 2)
 cloud_c3 <- get_cloud_points(valid_boots, 3)
 all_clouds <- rbind(cloud_c1, cloud_c2, cloud_c3)
 
-# Triangol definition (Low left, Med top, High right)
+# Triangolo: High left, Medium top, Low right
 triangle_border <- data.frame(
   x = c(0, 0.5, 1, 0),
   y = c(0, sqrt(3)/2, 0, 0)
@@ -84,20 +93,23 @@ triangle_border <- data.frame(
 p_clean <- ggplot() +
   geom_path(data=triangle_border, aes(x,y), color="black", linewidth=0.8) +
   
-  annotate("text", x=-0.05, y=0, label="Low", fontface="bold") +
-  annotate("text", x=1.05, y=0, label="High", fontface="bold") +
+  annotate("text", x=-0.05, y=0, label="High", fontface="bold") +
+  annotate("text", x=1.05, y=0, label="Low", fontface="bold") +
   annotate("text", x=0.5, y=sqrt(3)/2 + 0.05, label="Medium", fontface="bold") +
   
   geom_point(data=all_clouds, aes(x=x, y=y, color=Column), 
              size=0.8, alpha=0.5) +
   
-  scale_color_manual(values=c("red", "green", "blue"), 
-                     name="Confidence regions (95%):",
-                     labels=c("Column 1 (Low)", "Column 2 (Medium)", "Column 3 (High)")) +
+  scale_color_manual(
+    values=c("red", "green", "blue"), 
+    name="Confidence regions (95%):",
+    labels=c("Column 1 (High)", "Column 2 (Medium)", "Column 3 (Low)")
+  ) +
+  
   coord_fixed() +
   theme_void() +
   theme(legend.position="bottom", plot.title = element_text(hjust = 0.5)) +
-  labs(title = "Bootstrap Confidence Clouds") 
+  labs(title = "Bootstrap Confidence Clouds")
 
 print(p_clean)
 
