@@ -475,9 +475,25 @@ ternary_to_xy <- function(p_mat) {
 
 
 get_cloud_points <- function(matrix_list, col_idx) {
+
   mat_col <- do.call(rbind, lapply(matrix_list, function(M) M[, col_idx]))
-  df_xy <- ternary_to_xy(mat_col)
-  df_xy$Column <- paste0("C", col_idx) 
+
+  # mat_col ha colonne: High, Medium, Low
+  High   <- mat_col[, 1]
+  Medium <- mat_col[, 2]
+  Low    <- mat_col[, 3]
+
+  # mapping coerente con:
+  # High -> top
+  # Medium -> left
+  # Low -> right
+  df_xy <- data.frame(
+    x = Low + 0.5 * High,
+    y = (sqrt(3)/2) * High
+  )
+
+  df_xy$Column <- paste0("C", col_idx)
+
   return(df_xy)
 }
 
