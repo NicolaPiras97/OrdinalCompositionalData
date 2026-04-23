@@ -75,43 +75,62 @@ valid_indices <- which(distances_W <= radius_95)
 valid_boots <- A_boot_list[valid_indices]
 
 # ==================================================
-# PLOT (ordine: High, Medium, Low)
+# PLOT CORRETTO (High top, Medium left, Low right)
 # ==================================================
 
-# clouds
 cloud_c1 <- get_cloud_points(valid_boots, 1)
 cloud_c2 <- get_cloud_points(valid_boots, 2)
 cloud_c3 <- get_cloud_points(valid_boots, 3)
+
 all_clouds <- rbind(cloud_c1, cloud_c2, cloud_c3)
 
-# Triangolo: High left, Medium top, Low right
 triangle_border <- data.frame(
-  x = c(0, 0.5, 1, 0),
-  y = c(0, sqrt(3)/2, 0, 0)
+  x = c(0, 1, 0.5, 0),
+  y = c(0, 0, sqrt(3)/2, 0)
 )
 
 p_clean <- ggplot() +
-  geom_path(data=triangle_border, aes(x,y), color="black", linewidth=0.8) +
-  
-  annotate("text", x=-0.05, y=0, label="High", fontface="bold") +
-  annotate("text", x=1.05, y=0, label="Low", fontface="bold") +
-  annotate("text", x=0.5, y=sqrt(3)/2 + 0.05, label="Medium", fontface="bold") +
-  
-  geom_point(data=all_clouds, aes(x=x, y=y, color=Column), 
-             size=0.8, alpha=0.5) +
-  
-  scale_color_manual(
-    values=c("red", "green", "blue"), 
-    name="Confidence regions (95%):",
-    labels=c("Column 1 (High)", "Column 2 (Medium)", "Column 3 (Low)")
+  geom_path(data = triangle_border, aes(x, y),
+            color = "black", linewidth = 0.8) +
+
+  # ETICHETTE DISTANZIATE
+  annotate("text",
+           x = -0.08, y = -0.03,
+           label = "Medium", fontface = "bold") +
+
+  annotate("text",
+           x = 1.08, y = -0.03,
+           label = "Low", fontface = "bold") +
+
+  annotate("text",
+           x = 0.5, y = sqrt(3)/2 + 0.07,
+           label = "High", fontface = "bold") +
+
+  geom_point(
+    data = all_clouds,
+    aes(x = x, y = y, color = Column),
+    size = 0.8,
+    alpha = 0.5
   ) +
-  
+
+  scale_color_manual(
+    values = c("red", "green", "blue"),
+    name = "Confidence regions (95%):",
+    labels = c(
+      "Column 1 (High)",
+      "Column 2 (Medium)",
+      "Column 3 (Low)"
+    )
+  ) +
+
   coord_fixed() +
   theme_void() +
-  theme(legend.position="bottom", plot.title = element_text(hjust = 0.5)) +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(hjust = 0.5)
+  ) +
   labs(title = "Bootstrap Confidence Clouds")
-
-print(p_clean)
+  print(p_clean)
 
 A_Freshet_W <- matrix(0, nrow=Cy, ncol=Cx)
 dimnames(A_Freshet_W) <- dimnames(A_hat)
