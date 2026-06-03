@@ -22,7 +22,7 @@ for(i in 1:N){ ydata[[i]]<-y[i,]; xdata[[i]]<-x[i,] }
 
 weights_orig <- c(1,1)
 
-res <- select_lambda(xdata, ydata, weights_orig, lambda_grid, lambda_grid, method="gcv")
+res <- select_lambda(xdata, ydata, weights_orig, lambda_grid, 0, method="gcv")
 final_model <- solve_simplex_lp(xdata, ydata, weights_orig, lambda1 = res$best_lambda1, lambda2 = res$best_lambda2)
 A_hat<-final_model$A
 
@@ -57,13 +57,14 @@ for(b in 1:B) {
   weightsB <- c(1,1)
   
   # Solver
-  resB <- select_lambda(xdataB, ydataB, weightsB, lambda_grid)
-  solB <- solve_simplex_lp(xdataB, ydataB, weightsB, lambda = resB$best_lambda)
+  resB <- select_lambda(xdataB, ydataB, weightsB, lambda_grid, 0, method="gcv")
+  solB <- solve_simplex_lp(xdataB, ydataB, weightsB, lambda1 = res$best_lambda1, lambda2 = res$best_lambda2)
   A_boot <- solB$A
   A_boot_list[[b]] <- A_boot
   
   # Distance
   distances_W[b] <- matrix_wasserstein_dist(A_hat, A_boot, weights_orig)
+  rm(.Random.seed)
   setTxtProgressBar(pb, b)
 }
 close(pb)
@@ -195,10 +196,10 @@ for(i in 1:N){
 for(i in 1:N){
   xdataB[[i]]<-xB[i,]
 }
-resB <- select_lambda(xdataB, ydataB, weightsB[[b]], lambda_grid)
-solB<-solve_simplex_lp( xdataB , ydataB , weightsB[[b]], lambda = resB$best_lambda )
+resB <- select_lambda(xdataB, ydataB, weightsB[[b]], lambda_grid, 0, method="gcv")
+solB<-solve_simplex_lp( xdataB , ydataB , weightsB[[b]], lambda1 = res$best_lambda1, lambda2 = res$best_lambda2 )
 Btot[[b]]<-solB$A
-
+rm(.Random.seed)
 for(j in 1:Cy){
   vartotc[j]=vartotc[j]+wd(weightsB[[b]],A_hat[,j],Btot[[b]][,j])
 }
