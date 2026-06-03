@@ -22,8 +22,8 @@ for(i in 1:N){ ydata[[i]]<-y[i,]; xdata[[i]]<-x[i,] }
 
 weights_orig <- c(1,1)
 
-res <- select_lambda(xdata, ydata, weights_orig, lambda_grid)
-final_model <- solve_simplex_lp(xdata, ydata, weights_orig, lambda = res$best_lambda)
+res <- select_lambda(xdata, ydata, weights_orig, lambda_grid, lambda_grid, method="gcv")
+final_model <- solve_simplex_lp(xdata, ydata, weights_orig, lambda1 = res$best_lambda1, lambda2 = res$best_lambda2)
 A_hat<-final_model$A
 
 cat("Original estimate A_hat\n")
