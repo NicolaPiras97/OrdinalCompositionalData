@@ -24,231 +24,480 @@ safe_dirichlet <- function(alpha, scale = 10, eps = 1e-6){
 }
 
 
-solve_simplex_lp<-function(P_list, P_prime_list, a_weights, lambda = 0) {
-  
+solve_simplex_lp<-function(
+    P_list, P_prime_list, a_weights,
+    lambda1 = 0,
+    lambda2 = 0
+){
+
   N <- length(P_list)
   n_cols_A <- length(P_list[[1]])
   m_rows_A <- length(P_prime_list[[1]])
-  
+
   num_vars_A <- m_rows_A * n_cols_A
   num_vars_t <- N * (m_rows_A - 1)
-  
-  use_reg <- (lambda > 0)
-  
-  edges <- list()
-  num_vars_reg <- 0
-  
-  if (use_reg && n_cols_A > 1) {
-    edges <- lapply(1:(n_cols_A - 1), function(j) c(j, j + 1))
-    num_vars_reg <- length(edges) * (m_rows_A - 1)
+
+  use_reg1 <- (lambda1 > 0)
+  use_reg2 <- (lambda2 > 0)
+
+  # ---- EDGES primo ordine ----
+  edges1 <- list()
+  num_vars_reg1 <- 0
+
+  if(use_reg1 && n_cols_A > 1){
+    edges1 <- lapply(1:(n_cols_A - 1), function(j) c(j, j + 1))
+    num_vars_reg1 <- length(edges1) * (m_rows_A - 1)
   }
-  
-  total_vars <- num_vars_A + num_vars_t + num_vars_reg
-  
+
+  # ---- EDGES secondo ordine ----
+  edges2 <- list()
+  num_vars_reg2 <- 0
+
+  if(use_reg2 && n_cols_A > 2){
+    edges2 <- lapply(2:(n_cols_A - 1), function(j) c(j-1, j, j+1))
+    num_vars_reg2 <- length(edges2) * (m_rows_A - 1)
+  }
+
+  total_vars <- num_vars_A + num_vars_t + num_vars_reg1 + num_vars_reg2
+
   lp_model <- make.lp(0, total_vars)
   lp.control(lp_model, sense = "min", verbose = "neutral")
-  
-  obj_t  <- rep(a_weights, N)
-  obj_reg <- if(use_reg) rep(lambda, num_vars_reg) else numeric(0)
-  
-  set.objfn(lp_model, c(rep(0, num_vars_A), obj_t, obj_reg))
-  
+
+  # ---- OBJECTIVE ----
+  obj <- c(
+    rep(0, num_vars_A),
+    rep(a_weights, N),
+    rep(lambda1 * a_weights, length(edges1)),
+    rep(lambda2 * a_weights, length(edges2))
+  )
+
+  set.objfn(lp_model, obj)
   set.bounds(lp_model, lower = rep(0, total_vars), columns = 1:total_vars)
-  
+
+  # ---- INDEX HELPERS ----
   get_A_idx <- function(r, c) (c - 1) * m_rows_A + r
   get_t_idx <- function(obs, k) num_vars_A + (obs - 1) * (m_rows_A - 1) + k
-  get_u_idx <- function(edge, k)
-    num_vars_A + num_vars_t + (edge - 1) * (m_rows_A - 1) + k
-  
-  # Constraints simplex columns
-  for (j in 1:n_cols_A) {
-    indices <- sapply(1:m_rows_A, get_A_idx, c = j)
-    add.constraint(lp_model, rep(1, m_rows_A), "=", 1, indices = indices)
+
+  get_u1_idx <- function(e, k)
+    num_vars_A + num_vars_t + (e - 1) * (m_rows_A - 1) + k
+
+  get_u2_idx <- function(e, k)
+    num_vars_A + num_vars_t + num_vars_reg1 + (e - 1) * (m_rows_A - 1) + k
+
+  # ---- SIMPLEX ----
+  for(j in 1:n_cols_A){
+    idx <- sapply(1:m_rows_A, get_A_idx, c = j)
+    add.constraint(lp_model, rep(1, m_rows_A), "=", 1, indices = idx)
   }
-  
-  # Constraints Wasserstein fit
+
+  # ---- WASSERSTEIN FIT ----
   CDF_targets <- lapply(P_prime_list, cumsum)
-  
-  for (i in 1:N) {
+
+  for(i in 1:N){
     P_in <- P_list[[i]]
     nz_idx <- which(P_in > 0)
-    
-    for (k in 1:(m_rows_A - 1)) {
+
+    for(k in 1:(m_rows_A - 1)){
       t_idx <- get_t_idx(i, k)
-      col_indices <- numeric()
-      col_values <- numeric()
-      
-      for(j in nz_idx)
+
+      col_indices <- c()
+      col_values  <- c()
+
+      for(j in nz_idx){
         for(r in 1:k){
           col_indices <- c(col_indices, get_A_idx(r, j))
           col_values  <- c(col_values, P_in[j])
         }
-      
+      }
+
       rhs <- CDF_targets[[i]][k]
-      
-      add.constraint(lp_model, c(col_values, -1), "<=", rhs, indices = c(col_indices, t_idx))
-      
-      add.constraint(lp_model, c(col_values, 1), ">=", rhs, indices = c(col_indices, t_idx))
+
+      add.constraint(lp_model,
+                     c(col_values, -1),
+                     "<=",
+                     rhs,
+                     indices = c(col_indices, t_idx))
+
+      add.constraint(lp_model,
+                     c(col_values, 1),
+                     ">=",
+                     rhs,
+                     indices = c(col_indices, t_idx))
     }
   }
-  
-  if(use_reg){
-    for(e in 1:length(edges)){
-      c1 <- edges[[e]][1]
-      c2 <- edges[[e]][2]
-      
+
+  # ---- REG 1 (NOW WEIGHTED) ----
+  if(use_reg1){
+    for(e in seq_along(edges1)){
+      c1 <- edges1[[e]][1]
+      c2 <- edges1[[e]][2]
+
       for(k in 1:(m_rows_A - 1)){
-        u_idx <- get_u_idx(e, k)
-        
-        idx_c1 <- sapply(1:k, function(r) get_A_idx(r, c1))
-        idx_c2 <- sapply(1:k, function(r) get_A_idx(r, c2))
-        
-        vals  <- c(rep(1, length(idx_c1)), rep(-1, length(idx_c2)), -1)
-        
-        add.constraint(lp_model, vals, "<=", 0, indices = c(idx_c1, idx_c2, u_idx))
-        
-        vals2 <- c(rep(1, length(idx_c1)), rep(-1, length(idx_c2)), 1)
-        
-        add.constraint(lp_model, vals2, ">=", 0, indices = c(idx_c1, idx_c2, u_idx))
+        u_idx <- get_u1_idx(e, k)
+
+        idx1 <- sapply(1:k, function(r) get_A_idx(r, c1))
+        idx2 <- sapply(1:k, function(r) get_A_idx(r, c2))
+
+        w <- a_weights[k]
+
+        add.constraint(lp_model,
+                       c(rep(w, k), rep(-w, k), -1),
+                       "<=",
+                       0,
+                       indices = c(idx1, idx2, u_idx))
+
+        add.constraint(lp_model,
+                       c(rep(w, k), rep(-w, k), 1),
+                       ">=",
+                       0,
+                       indices = c(idx1, idx2, u_idx))
       }
     }
   }
-  
+
+  # ---- REG 2 (NOW WEIGHTED) ----
+  if(use_reg2){
+    for(e in seq_along(edges2)){
+      c1 <- edges2[[e]][1]
+      c2 <- edges2[[e]][2]
+      c3 <- edges2[[e]][3]
+
+      for(k in 1:(m_rows_A - 1)){
+        u_idx <- get_u2_idx(e, k)
+
+        idx1 <- sapply(1:k, function(r) get_A_idx(r, c1))
+        idx2 <- sapply(1:k, function(r) get_A_idx(r, c2))
+        idx3 <- sapply(1:k, function(r) get_A_idx(r, c3))
+
+        w <- a_weights[k]
+
+        add.constraint(lp_model,
+                       c(rep(w, k), rep(-2*w, k), rep(w, k), -1),
+                       "<=",
+                       0,
+                       indices = c(idx1, idx2, idx3, u_idx))
+
+        add.constraint(lp_model,
+                       c(rep(w, k), rep(-2*w, k), rep(w, k), 1),
+                       ">=",
+                       0,
+                       indices = c(idx1, idx2, idx3, u_idx))
+      }
+    }
+  }
+
   res_code <- solve(lp_model)
   if(res_code != 0) return(NULL)
-  
+
   vars <- get.variables(lp_model)
-  
-  A_opt <- matrix(vars[1:num_vars_A], nrow = m_rows_A, ncol = n_cols_A)
-  
+
+  A_opt <- matrix(vars[1:num_vars_A],
+                  nrow = m_rows_A,
+                  ncol = n_cols_A)
+
   return(list(A = A_opt))
 }
 
-select_lambda <- function(P_list, P_prime_list, a_weights, lambda_grid){
-    
-    compute_fit <- function(A, P_list, P_prime_list){
-        N <- length(P_list)
-        m <- length(P_prime_list[[1]])
-        fit <- 0
-        for(i in 1:N){
-            F_mix <- rep(0, m)
-            for(j in 1:length(P_list[[i]])){
-                F_mix <- F_mix + P_list[[i]][j] * cumsum(A[,j])
-            }
-            fit <- fit + sum((F_mix[-m] - cumsum(P_prime_list[[i]])[-m])^2) # quadrato per LOOCV
-        }
-        return(fit)
-    }
-    
-    gcv_values <- numeric(length(lambda_grid))
-    fit_values <- numeric(length(lambda_grid))
-    
-    for(i in seq_along(lambda_grid)){
-        lam <- lambda_grid[i]
-        res <- solve_simplex_lp(P_list, P_prime_list, a_weights, lambda = lam)
-        if(is.null(res)) next
-        A_hat <- res$A
-        fit <- compute_fit(A_hat, P_list, P_prime_list)
-        fit_values[i] <- fit
-        
-        # --- LOOCV / GCV classica ---
-        svd_res <- svd(A_hat)
-        sigma <- svd_res$d
-        #sigma <- sigma[sigma > 1e-6]           # ignora valori troppo piccoli
-        df <- sum(sigma^2 / (sigma^2 + lam))   # df effettivo
-        
-        n <- length(P_list) * (nrow(A_hat)-1)  # numero totale di osservazioni
-        gcv_values[i] <- fit / (max(n - df, 1)^2)
-    }
-    
-    best_idx <- which.min(gcv_values)
-    
-    return(list(
-        best_lambda = lambda_grid[best_idx],
-        gcv_values = gcv_values,
-        fit_values = fit_values,
-        lambda_grid = lambda_grid
-    ))
-}
+                       
+select_lambda <- function(
+    P_list,
+    P_prime_list,
+    a_weights,
+    lambda1_grid,
+    lambda2_grid,
+    method = c("cv", "gcv"),
+    K = NULL,
+    seed = 123,
+    verbose = FALSE
+){
 
-select_weights <- function(x1, x2, ydata, a, b, lambda_grid){
+  method <- match.arg(method)
+
+  N <- length(P_list)
+  m <- length(P_prime_list[[1]])
+
+  lambda1_grid <- sort(unique(lambda1_grid))
+  lambda2_grid <- sort(unique(lambda2_grid))
+
   
-  weight_profiles <- list(c(1,1,1), c(1,2,3), c(1,2,1), c(1,1,2), c(2,1,1), c(2,2,1), c(2,1,2), c(3,2,1))
-  
-  # --- costruzione Z_data ---
-  Z_data <- lapply(1:nrow(x1), function(i){
-    tensor_product(
-      comps = list(x1[i,], x2[i,]),
-      list(a, b)
-    )$product
-  })
-  
-  results <- list()
-  
-  for(i in seq_along(weight_profiles)){
-    
-    w_raw <- weight_profiles[[i]]
-    weights <- w_raw / sum(w_raw)
-    
-    # --- selezione lambda ---
-    res <- select_lambda(
-      P_list = Z_data,
-      P_prime_list = ydata,
-      a_weights = weights,
-      lambda_grid = lambda_grid
+  compute_fit_single <- function(A, P, Pp){
+
+    F_mix <- rep(0, m)
+
+    for(j in 1:length(P)){
+      F_mix <- F_mix + P[j] * cumsum(A[,j])
+    }
+
+    fit <- sum(
+      a_weights * abs(
+        F_mix[-m] - cumsum(Pp)[-m]
+      )
     )
-    
-    if(is.null(res) || all(is.na(res$gcv_values))) next
-    
-    best_lambda <- res$best_lambda
-    
-    # --- stima A ---
-    A_hat <- solve_simplex_lp(Z_data, ydata, weights, best_lambda)$A
-    
-    # --- costruisci X matriciale ---
-    X_mat <- do.call(rbind, Z_data)
-    Y <- do.call(rbind, ydata)
-    
-    # --- calcolo R2 Wasserstein ---
-    r2_res <- compute_R2(
-      Y = Y,
-      X = X_mat,
-      A = A_hat,
-      weights = weights
-    )
-    
-    results[[i]] <- list(
-      weights = weights,
-      weights_raw = w_raw,
-      lambda = best_lambda,
-      SSE = r2_res$SSE,
-      R2 = r2_res$R2
-    )
+
+    if(is.na(fit) || is.infinite(fit)){
+      return(Inf)
+    }
+
+    fit
   }
-  
-  # --- selezione finale ---
-  SSE_vec <- sapply(results, function(x) x$SSE)
-  min_SSE <- min(SSE_vec, na.rm = TRUE)
-  
-  # tolleranza numerica
-  tol <- 1e-6
-  candidates <- results[abs(SSE_vec - min_SSE) < tol]
-  
-  if(length(candidates) > 1){
-    R2_vec <- sapply(candidates, function(x) x$R2)
-    best_idx <- which.max(R2_vec)
-    best <- candidates[[best_idx]]
-  } else {
-    best <- candidates[[1]]
+
+  compute_fit <- function(A, P_list, P_prime_list){
+
+    fit <- 0
+
+    for(i in 1:length(P_list)){
+
+      F_mix <- rep(0, m)
+
+      for(j in 1:length(P_list[[i]])){
+        F_mix <- F_mix +
+          P_list[[i]][j] * cumsum(A[,j])
+      }
+
+      fit <- fit +
+        sum(
+          a_weights[1:(m-1)] *
+            abs(
+              F_mix[-m] -
+                cumsum(P_prime_list[[i]])[-m]
+            )
+        )
+    }
+
+    fit
   }
-  
-  return(list(
-    best = best,
-    all_results = results
-  ))
+
+  # =====================================================
+  # CROSS-VALIDATION
+  # =====================================================
+  if(method == "cv"){
+
+    # vera CV = LOOCV
+    if(is.null(K)){
+      K <- N
+    }
+
+    if(K > N){
+      stop("K must be lower then the number of observations.")
+    }
+
+    set.seed(seed)
+
+    if(K == N){
+
+      folds <- seq_len(N)
+
+    } else {
+
+      folds <- sample(rep(1:K, length.out = N))
+
+    }
+
+    cv_values <- matrix(
+      Inf,
+      nrow = length(lambda1_grid),
+      ncol = length(lambda2_grid)
+    )
+
+    rownames(cv_values) <- paste0("lam1_", lambda1_grid)
+    colnames(cv_values) <- paste0("lam2_", lambda2_grid)
+
+    for(i1 in seq_along(lambda1_grid)){
+
+      lam1 <- lambda1_grid[i1]
+
+      for(i2 in seq_along(lambda2_grid)){
+
+        lam2 <- lambda2_grid[i2]
+
+        if(verbose){
+
+          cat("\n============================\n")
+          cat(
+            "lambda1 =", lam1,
+            "| lambda2 =", lam2, "\n"
+          )
+          cat("============================\n")
+        }
+
+        cv_error <- 0
+        valid <- TRUE
+
+        for(k in unique(folds)){
+
+          train_idx <- which(folds != k)
+          test_idx  <- which(folds == k)
+
+          if(length(train_idx) < 1){
+            valid <- FALSE
+            break
+          }
+
+          res <- tryCatch({
+
+            solve_simplex_lp(
+              P_list[train_idx],
+              P_prime_list[train_idx],
+              a_weights,
+              lambda1 = lam1,
+              lambda2 = lam2
+            )
+
+          }, error = function(e) NULL)
+
+          if(is.null(res)){
+            valid <- FALSE
+            break
+          }
+
+          A_hat <- res$A
+
+          for(t in test_idx){
+
+            err <- compute_fit_single(
+              A_hat,
+              P_list[[t]],
+              P_prime_list[[t]]
+            )
+
+            if(is.infinite(err)){
+              valid <- FALSE
+              break
+            }
+
+            cv_error <- cv_error + err
+          }
+
+          if(!valid) break
+        }
+
+        if(valid){
+
+          cv_values[i1, i2] <- cv_error
+
+          if(verbose){
+            cat("CV error =", cv_error, "\n")
+          }
+
+        } else {
+
+          cv_values[i1, i2] <- Inf
+
+          if(verbose){
+            cat("Configuration descarted\n")
+          }
+        }
+      }
+    }
+
+    if(all(is.infinite(cv_values))){
+      stop("All configurations were descarted.")
+    }
+
+    idx <- which(
+      cv_values == min(cv_values, na.rm = TRUE),
+      arr.ind = TRUE
+    )[1,]
+
+    return(list(
+      method = "cv",
+      best_lambda1 = lambda1_grid[idx[1]],
+      best_lambda2 = lambda2_grid[idx[2]],
+      cv_values = cv_values,
+      lambda1_grid = lambda1_grid,
+      lambda2_grid = lambda2_grid,
+      K = K,
+      seed = seed
+    ))
+  }
+
+  # =====================================================
+  # GCV
+  # =====================================================
+  if(method == "gcv"){
+
+    n1 <- length(lambda1_grid)
+    n2 <- length(lambda2_grid)
+
+    n_total <- n1 * n2
+
+    fit_values <- rep(Inf, n_total)
+    score_values <- rep(Inf, n_total)
+
+    cc <- 0
+
+    for(i1 in seq_along(lambda1_grid)){
+
+      lam1 <- lambda1_grid[i1]
+
+      for(i2 in seq_along(lambda2_grid)){
+
+        lam2 <- lambda2_grid[i2]
+
+        cc <- cc + 1
+
+        res <- tryCatch(
+
+          solve_simplex_lp(
+            P_list,
+            P_prime_list,
+            a_weights,
+            lambda1 = lam1,
+            lambda2 = lam2
+          ),
+
+          error = function(e) NULL
+        )
+
+        if(is.null(res)){
+          next
+        }
+
+        A_hat <- res$A
+
+        fit <- compute_fit(
+          A_hat,
+          P_list,
+          P_prime_list
+        )
+
+        fit_values[cc] <- fit
+
+        svd_res <- svd(A_hat)
+
+        sigma <- svd_res$d
+        sigma <- sigma[sigma > 1e-6]
+
+        df <- sum(
+          sigma^2 /
+            (sigma^2 + lam1 + lam2)
+        )
+
+        n <- length(P_list) *
+          (nrow(A_hat) - 1)
+
+        score_values[cc] <-
+          fit / (max(n - df, 1)^2)
+      }
+    }
+
+    best_idx <- which.min(score_values)
+
+    best_i1 <- (best_idx - 1) %/% n2 + 1
+    best_i2 <- (best_idx - 1) %% n2 + 1
+
+    return(list(
+      method = "gcv",
+      best_lambda1 = lambda1_grid[best_i1],
+      best_lambda2 = lambda2_grid[best_i2],
+      score_values = score_values,
+      fit_values = fit_values,
+      lambda1_grid = lambda1_grid,
+      lambda2_grid = lambda2_grid
+    ))
+  }
 }
-                        
-                         
+                          
 OCC <- function(P, Pprime) {
   
   # check dimensioni
