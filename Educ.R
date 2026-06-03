@@ -58,7 +58,7 @@ for(b in 1:B) {
   
   # Solver
   resB <- select_lambda(xdataB, ydataB, weightsB, lambda_grid, 0, method="gcv")
-  solB <- solve_simplex_lp(xdataB, ydataB, weightsB, lambda1 = res$best_lambda1, lambda2 = res$best_lambda2)
+  solB <- solve_simplex_lp(xdataB, ydataB, weightsB, lambda1 = resB$best_lambda1, lambda2 = resB$best_lambda2)
   A_boot <- solB$A
   A_boot_list[[b]] <- A_boot
   
@@ -197,7 +197,7 @@ for(i in 1:N){
   xdataB[[i]]<-xB[i,]
 }
 resB <- select_lambda(xdataB, ydataB, weightsB[[b]], lambda_grid, 0, method="gcv")
-solB<-solve_simplex_lp( xdataB , ydataB , weightsB[[b]], lambda1 = res$best_lambda1, lambda2 = res$best_lambda2 )
+solB<-solve_simplex_lp( xdataB , ydataB , weightsB[[b]], lambda1 = resB$best_lambda1, lambda2 = resB$best_lambda2 )
 Btot[[b]]<-solB$A
 rm(.Random.seed)
 for(j in 1:Cy){
