@@ -30,20 +30,15 @@ for(i in 1:N){
 xdata1 <- list()
 xdata2 <- list()
 ydata <- list(); Z_data <- list()
-a<-b<-c(1,1,1)
+a<-b<-weights<-c(2,1,2)
 for(i in 1:N){ 
        xdata1[[i]]<-x1[i,]
        xdata2[[i]]<-x2[i,]
        ydata[[i]] <- y[i,]
-}
-weights<-select_weights(x1, x2, ydata, a, b, lambda_grid)$best$weights_raw
-
-for(i in 1:N){ 
       Z_data[[i]] <- tensor_product(comps=list(x1[i,], x2[i,]),list(a,b),return_indices = TRUE)$product
 }
-res_svd <- select_lambda(Z_data, ydata, weights, lambda_grid)
-#res_svd$best_lambda  # λ1 selezionato con GCV basato su SVD
-final_model <- solve_simplex_lp(Z_data, ydata, weights, lambda = res_svd$best_lambda)
+res <- select_lambda(Z_data, ydata, weights, lambda_grid, lambda_grid)
+final_model <- solve_simplex_lp(Z_data, ydata, weights, lambda1 = res$best_lambda1, lambda2 = res$best_lambda2)
 A_hat<-final_model$A
 indices_map<-tensor_product(comps=list(x1[1,], x2[1,]),list(a,b),return_indices=TRUE)$indices
 colnames(A_hat) <- apply(indices_map, 1, function(v) paste0("(", v[1], ",", v[2], ")"))
@@ -82,7 +77,7 @@ print(R2W)
 # 3. BOOTSTRAP 
 # ==============================================================================
 
-B <- 5000
+B <- 2000
 distances_W <- numeric(B)
 A_boot_list <- list()
 
@@ -107,12 +102,13 @@ for(bi in 1:B) {
   
   # Solver
   Z_dataB <-lapply(1:N, function(i) tensor_product(comps=list(xdataB1[[i]],xdataB2[[i]]),list(a,b) )$product)
-  res_svdB <- select_lambda(Z_dataB, ydataB, weightsB, lambda_grid)
-  solB <- solve_simplex_lp(Z_dataB, ydataB, weightsB, lambda = res_svdB$best_lambda)
+  resB <- select_lambda(Z_dataB, ydataB, weightsB, lambda_grid, lambda_grid)
+  solB <- solve_simplex_lp(Z_dataB, ydataB, weightsB, lambda1 = resB$best_lambda1, lambda2 = resB$best_lambda2)
   A_boot <- solB$A
   A_boot_list[[bi]] <- A_boot
   
   distances_W[bi] <- matrix_wasserstein_dist(A_hat, A_boot, weights)
+  rm(.Random.seed)
   setTxtProgressBar(pb, bi)
 }
 close(pb)
@@ -162,10 +158,10 @@ for(bi in 1:B){
     x2dataB[[i]]<-x2B[i,]
   }
   Z_dataB <-lapply(1:N, function(i) tensor_product(comps=list(x1dataB[[i]],x2dataB[[i]]),list(a,b) )$product)
-  resB <- select_lambda(Z_dataB, ydataB, weightsB[[bi]], lambda_grid)
-  solB<-solve_simplex_lp( Z_dataB , ydataB , weightsB[[bi]], lambda = resB$best_lambda )
+  resB <- select_lambda(Z_dataB, ydataB, weightsB[[bi]], lambda_grid, lambda_grid)
+  solB<-solve_simplex_lp( Z_dataB , ydataB , weightsB[[bi]], lambda1 = resB$best_lambda1, lambda2 = resB$best_lambda2 )
   Btot[[bi]]<-solB$A
-  
+  rm(.Random.seed)
   for(j in 1:Cy){
     vartotc[j]=vartotc[j]+wd(weightsB[[bi]],A_hat[,j],Btot[[bi]][,j])
   }
