@@ -32,8 +32,8 @@ for(r in 1:R){
     x_train_list <- lapply(1:nrow(x_train_mat), function(i) x_train_mat[i,])
     y_train_list <- lapply(1:nrow(y_train_mat), function(i) y_train_mat[i,])
     
-    reslambda <- select_lambda(x_train_list, y_train_list, weights, lambda_grid)
-    res <- solve_simplex_lp(x_train_list, y_train_list,weights, lambda = reslambda$best_lambda)
+    reslambda <- select_lambda(x_train_list, y_train_list, weights, lambda_grid, 0, method="gcv")
+    res <- solve_simplex_lp(x_train_list, y_train_list,weights, lambda1 = reslambda$best_lambda1, lambda2 = reslambda$best_lambda2)
     A_mine <- res$A
     
     # ----- CODALM
