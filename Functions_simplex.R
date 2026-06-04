@@ -384,14 +384,14 @@ select_lambda <- function(
           cv_values[i1, i2] <- Inf
 
           if(verbose){
-            cat("Configuration descarted\n")
+            cat("Configuration discarded\n")
           }
         }
       }
     }
 
     if(all(is.infinite(cv_values))){
-      stop("All configurations were descarted.")
+      stop("All configurations were discarded.")
     }
 
     idx <- which(
