@@ -651,61 +651,50 @@ opi <- function(P, Q, tol = 1e-8) {
 }
 
 compute_R2 <- function(Y, X, A, weights){
-
-  N <- nrow(Y)
+  
+  N  <- nrow(Y)
   Cy <- ncol(Y)
   
-  # --- funzione mediana Wasserstein ---
-  compute_wmedian <- function(mat, weights){
-    distot <- rep(0, nrow(mat))
+  # --- Fréchet ---
+  compute_wfrechet_mean <- function(mat){
     
-    for(i in 1:nrow(mat)){
-      for(j in 1:nrow(mat)){
-        if(i != j){
-          if(opiwd(weights, mat[i,], mat[j,]) == 1){
-            distot[i] <- distot[i] + 1
-          }
-        }
-      }
-    }
+    cdf_mat <- t(apply(mat, 1, cumsum))
     
-    ord <- order(distot)
+    Fbar <- apply(cdf_mat, 2, median)
     
-    if(nrow(mat) %% 2 == 1){
-      return(mat[ord[round(nrow(mat)/2)], ])
-    } else {
-      return((mat[ord[nrow(mat)/2], ] +
-              mat[ord[nrow(mat)/2 + 1], ]) / 2)
-    }
+    pbar <- c(Fbar[1], diff(Fbar))
+    
+    return(pbar)
   }
   
-  ymed <- compute_wmedian(Y, weights)
+  ymean <- compute_wfrechet_mean(Y)
   
   pred <- matrix(0, nrow = N, ncol = Cy)
   for(i in 1:N){
     pred[i, ] <- as.vector(A %*% X[i, ])
   }
   
-  SSE <- 0
-  SST <- 0
+
+  Dres <- 0
+  Doto <- 0
   
   for(i in 1:N){
-    SSE <- SSE + wd(weights, Y[i, ], pred[i, ])
-    SST <- SST + wd(weights, Y[i, ], ymed)
+    Dres <- Dres + wd(weights, Y[i, ], pred[i, ])
+    Dtot <- Dtot + wd(weights, Y[i, ], ymean)
   }
   
-  # --- R2 ---
-  if(SST == 0){
-    return(NA)  # evita divisione per zero
+  # R^2
+  if(Dtot == 0){
+    return(NA)
   }
   
-  R2 <- 1 - SSE / SST
+  R2 <- 1 - Dres / Dtot
   
   return(list(
     R2 = R2,
-    SSE = SSE,
-    SST = SST,
-    y_median = ymed,
+    Dres = Dres,
+    Dtot = Dtot,
+    y_mean = ymean,
     pred = pred
   ))
 }
