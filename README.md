@@ -1,7 +1,7 @@
 # Regression model for Ordinal Compositional Data using Wasserstein distance.
 
 This is the code we used for the simulation study in the paper "Regression models for ordinal compositional data". 
-The code in this version is available for case stydy reproducibility purposes only. 
+The code in this version is available for case study reproducibility purposes only. 
 
 ## Usage
 
