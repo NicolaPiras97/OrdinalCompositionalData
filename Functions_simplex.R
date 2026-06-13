@@ -650,13 +650,8 @@ opi <- function(P, Q, tol = 1e-8) {
   return(0)     # non confrontabili
 }
 
-compute_R2 <- function(Y, X, A, weights){
-  
-  N  <- nrow(Y)
-  Cy <- ncol(Y)
-  
-  # --- Fréchet ---
-  compute_wfrechet_mean <- function(mat){
+
+compute_wfrechet_mean <- function(mat){
     
     cdf_mat <- t(apply(mat, 1, cumsum))
     
@@ -666,6 +661,12 @@ compute_R2 <- function(Y, X, A, weights){
     
     return(pbar)
   }
+                                                           
+
+compute_R2 <- function(Y, X, A, weights){
+  
+  N  <- nrow(Y)
+  Cy <- ncol(Y)
   
   ymean <- compute_wfrechet_mean(Y)
   
