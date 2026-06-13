@@ -138,8 +138,8 @@ dimnames(A_Freshet_W) <- dimnames(A_hat)
 
 for(j in 1:Cx) {
   cols_j_list <- lapply(valid_boots, function(M) M[, j])
-  mat_cols_j  <- do.call(cbind, cols_j_list) 
-  A_Freshet_W[, j] <- rowMeans(mat_cols_j)
+  mat_j <- do.call(rbind, cols_j_list)
+  A_Freshet_W[, j] <- compute_wfrechet_mean(mat_j)
 }
 cat("\n--- MATRIX FRÉCHET MEDIAN (Wasserstein center) ---\n")
 print(round(A_Freshet_W, 4))
