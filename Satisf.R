@@ -125,8 +125,8 @@ dimnames(A_Freshet_W) <- dimnames(A_hat)
 
 for(j in 1:(Cx1*Cx2)) {
   cols_j_list <- lapply(valid_boots, function(M) M[, j])
-  mat_cols_j  <- do.call(cbind, cols_j_list) 
-  A_Freshet_W[, j] <- rowMeans(mat_cols_j)
+  mat_j <- do.call(rbind, cols_j_list)
+  A_Freshet_W[, j] <- compute_wfrechet_mean(mat_j)
 }
 colnames(A_Freshet_W) <- apply(indices_map, 1, function(v) paste0("(", v[1], ",", v[2], ")"))
 cat("\n--- FRÉCHET MEAN ---\n")
