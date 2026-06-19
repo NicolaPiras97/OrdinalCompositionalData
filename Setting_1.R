@@ -312,17 +312,18 @@ data_rps <- data.frame(
                    variable.name = "Method", value.name = "RPS")
  
  # plot
- p1<-ggplot(data_long, aes(x = prop_zero, y = RPS, color = Method)) +
-     geom_line(size = 1.2) +
-     geom_point(size = 2) +
-     facet_wrap(~config, scales = "free_y") +
-     labs(
-         title = "Mean RPS with Zeri inflation (N = 100)",
-         x = "Proportion of zeros",
-         y = "Mean RPS"
-     ) +
-     theme_minimal()+
-     scale_color_manual(values = c("WD" = "red", "COD" = "blue"))
+ p1 <- ggplot(data_long,
+             aes(x = prop_zero, y = RPS, color = Method)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 2) +
+  facet_wrap(~config, scales = "free_y", ncol = 4) +
+  labs(
+    x = "Proportion of zeros",
+    y = "Mean RPS"
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("WD" = "red",
+                                "COD" = "blue"))
  p1
 
 
@@ -370,17 +371,16 @@ data_rps <- data.frame(
                    variable.name = "Method", value.name = "RPS")
  
  # plot
- p2<-ggplot(data_long, aes(x = prop_zero, y = RPS, color = Method)) +
-     geom_line(size = 1.2) +
-     geom_point(size = 2) +
-     facet_wrap(~config, scales = "free_y") +
-     labs(
-         title = "Mean RPS with Zeri inflation (N = 100)",
-         x = "Proportion of zeros",
-         y = "Mean RPS"
-     ) +
-     theme_minimal()+
-     scale_color_manual(values = c("WD" = "red", "COD" = "blue"))
+ p2 <- ggplot(data_long, aes(x = prop_zero, y = RPS, color = Method)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 2) +
+  facet_wrap(~config, scales = "free_y", ncol = 4) +
+  labs(
+    x = "Proportion of zeros",
+    y = "Mean RPS"
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("WD" = "red", "COD" = "blue"))
  p2
 
 
@@ -427,14 +427,14 @@ data_rps <- data.frame(
                    variable.name = "Method", value.name = "RPS")
  
  # plot
- p3<-ggplot(data_long, aes(x = prop_inv, y = RPS, color = Method)) +
-     geom_line(size = 1.2) +
-     geom_point(size = 2) +
-     facet_wrap(~config, scales = "free_y") +
-     labs(
-         title = "Mean RPS with Zeri inflation (N = 100)",
-         x = "Proportion of inversions",
-         y = "Mean RPS"
-     ) +
-     theme_minimal()+
-     scale_color_manual(values = c("WD" = "red", "COD" = "blue"))
+ p3 <- ggplot(data_long, aes(x = prop_inv, y = RPS, color = Method)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 2) +
+  facet_wrap(~config, scales = "free_y", ncol = 4) +
+  labs(
+    x = "Proportion of inversions",
+    y = "Mean RPS"
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("WD" = "red", "COD" = "blue"))
+p3
